@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3001:3001"
+    # The volume ensures that the database file is mounted from the host
+    # and that any changes made by the app are persisted.
+    volumes:
+      - ./backend/database:/usr/src/app/database
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
