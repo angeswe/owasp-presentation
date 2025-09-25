@@ -21,7 +21,7 @@ function App() {
     <Router>
       <div className="App">
         <header className="App-header">
-          <h1>⚠️ OWASP Top 10 Vulnerabilities Demo ⚠️</h1>
+          <h1>⚠️ OWASP (Open Web Application Security Project) Top 10 Vulnerabilities Demo ⚠️</h1>
           <p className="warning">FOR EDUCATIONAL PURPOSES ONLY</p>
         </header>
 
