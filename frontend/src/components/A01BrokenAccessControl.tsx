@@ -321,7 +321,7 @@ public class UsersController : ControllerBase
       </div>
 
       <div className="navigation-section">
-        <a href="/a02" className="next-button">
+        <a href="/web/a02" className="next-button">
           Next: A02 - Cryptographic Failures →
         </a>
       </div>

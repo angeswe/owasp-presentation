@@ -439,7 +439,7 @@ public class FetchUrlRequest
       </div>
 
       <div className="navigation-section">
-        <a href="/" className="next-button">
+        <a href="/web" className="next-button">
           Presentation Complete - Return Home →
         </a>
       </div>

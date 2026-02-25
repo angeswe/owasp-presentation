@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "./HomePage.css";
+import "./WebHomePage.css";
 
-const HomePage: React.FC = () => {
+const WebHomePage: React.FC = () => {
   return (
     <div className="home-page">
       <div className="hero-section">
@@ -28,7 +28,7 @@ const HomePage: React.FC = () => {
                 "Missing authorization",
                 "Privilege escalation",
               ],
-              path: "/a01",
+              path: "/web/a01",
             },
             {
               id: "A02",
@@ -39,7 +39,7 @@ const HomePage: React.FC = () => {
                 "Weak algorithms",
                 "Hardcoded secrets",
               ],
-              path: "/a02",
+              path: "/web/a02",
             },
             {
               id: "A03",
@@ -50,7 +50,7 @@ const HomePage: React.FC = () => {
                 "Command injection",
                 "NoSQL injection",
               ],
-              path: "/a03",
+              path: "/web/a03",
             },
             {
               id: "A04",
@@ -61,7 +61,7 @@ const HomePage: React.FC = () => {
                 "Business logic flaws",
                 "Unlimited resources",
               ],
-              path: "/a04",
+              path: "/web/a04",
             },
             {
               id: "A05",
@@ -72,7 +72,7 @@ const HomePage: React.FC = () => {
                 "Debug mode",
                 "Unnecessary features",
               ],
-              path: "/a05",
+              path: "/web/a05",
             },
             {
               id: "A06",
@@ -83,7 +83,7 @@ const HomePage: React.FC = () => {
                 "Unpatched software",
                 "Deprecated methods",
               ],
-              path: "/a06",
+              path: "/web/a06",
             },
             {
               id: "A07",
@@ -94,7 +94,7 @@ const HomePage: React.FC = () => {
                 "Session hijacking",
                 "Brute force attacks",
               ],
-              path: "/a07",
+              path: "/web/a07",
             },
             {
               id: "A08",
@@ -105,7 +105,7 @@ const HomePage: React.FC = () => {
                 "Insecure CI/CD",
                 "Untrusted sources",
               ],
-              path: "/a08",
+              path: "/web/a08",
             },
             {
               id: "A09",
@@ -116,7 +116,7 @@ const HomePage: React.FC = () => {
                 "Missing alerts",
                 "Poor incident response",
               ],
-              path: "/a09",
+              path: "/web/a09",
             },
             {
               id: "A10",
@@ -127,7 +127,7 @@ const HomePage: React.FC = () => {
                 "Cloud metadata",
                 "Port scanning",
               ],
-              path: "/a10",
+              path: "/web/a10",
             },
           ].map((vuln, index) => (
             <div key={vuln.id} className="vuln-card">
@@ -160,8 +160,13 @@ const HomePage: React.FC = () => {
         </p>
 
         <div className="quick-nav">
-          <Link to="/a01" className="start-button">
+          <Link to="/web/a01" className="start-button">
             Start Presentation (A01) →
+          </Link>
+        </div>
+        <div style={{ marginTop: "1rem" }}>
+          <Link to="/" style={{ color: "#666", fontSize: "0.9rem" }}>
+            &larr; Back to Home
           </Link>
         </div>
       </div>
@@ -169,4 +174,4 @@ const HomePage: React.FC = () => {
   );
 };
 
-export default HomePage;
+export default WebHomePage;

@@ -282,7 +282,7 @@ public async Task<User> FindUserByUsernameAsync(string username)
       </div>
 
       <div className="navigation-section">
-        <a href="/a04" className="next-button">
+        <a href="/web/a04" className="next-button">
           Next: A04 - Insecure Design →
         </a>
       </div>

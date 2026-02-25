@@ -7,14 +7,17 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json to leverage Docker cache
 COPY package*.json ./
 
-# Install app dependencies
-RUN npm install --only=production
+# Install all dependencies (including devDependencies for build)
+RUN npm install
 
 # Bundle app source
 COPY . .
 
 # Build TypeScript source
 RUN npm run build
+
+# Remove devDependencies after build
+RUN npm prune --production
 
 # The backend needs the database file
 # The database is located at the root of the backend directory

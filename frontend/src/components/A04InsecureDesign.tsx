@@ -297,7 +297,7 @@ public class MfaService
       </div>
 
       <div className="navigation-section">
-        <a href="/a05" className="next-button">
+        <a href="/web/a05" className="next-button">
           Next: A05 - Security Misconfiguration →
         </a>
       </div>

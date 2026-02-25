@@ -308,7 +308,7 @@ public class ConfigurationValidator
       </div>
 
       <div className="navigation-section">
-        <a href="/a06" className="next-button">
+        <a href="/web/a06" className="next-button">
           Next: A06 - Vulnerable Components →
         </a>
       </div>

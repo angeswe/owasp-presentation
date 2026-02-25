@@ -1,0 +1,159 @@
+.landing-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.landing-hero {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.landing-hero h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.landing-hero p {
+  font-size: 1.2rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.landing-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.landing-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 16px;
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.landing-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.landing-card--web {
+  background: linear-gradient(135deg, #dc3545, #c82333, #a71d2a);
+  color: white;
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+}
+
+.landing-card--llm {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  color: white;
+  box-shadow: 0 4px 16px rgba(48, 43, 99, 0.3);
+}
+
+.landing-card--llm::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(0, 206, 209, 0.15) 0%, transparent 60%),
+              radial-gradient(circle at 70% 50%, rgba(138, 43, 226, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.landing-card__year {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.landing-card--web .landing-card__year {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.landing-card--llm .landing-card__year {
+  background: linear-gradient(135deg, #00ced1, #8a2be2);
+}
+
+.landing-card h2 {
+  font-size: 1.8rem;
+  margin: 0 0 0.75rem 0;
+  position: relative;
+}
+
+.landing-card p {
+  font-size: 1rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  margin: 0 0 1.5rem 0;
+  position: relative;
+}
+
+.landing-card__cta {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1rem;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.landing-card:hover .landing-card__cta {
+  transform: scale(1.05);
+}
+
+.landing-card--web .landing-card__cta {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.landing-card--llm .landing-card__cta {
+  background: linear-gradient(135deg, #00ced1, #8a2be2);
+  color: white;
+}
+
+.landing-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+  margin-top: 0;
+}
+
+@media (max-width: 768px) {
+  .landing-page {
+    padding: 1rem;
+  }
+
+  .landing-hero h1 {
+    font-size: 2rem;
+  }
+
+  .landing-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-card {
+    padding: 2rem;
+  }
+
+  .landing-card h2 {
+    font-size: 1.5rem;
+  }
+}

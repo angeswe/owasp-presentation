@@ -1,0 +1,213 @@
+.llm-home-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.llm-hero-section {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  border-radius: 16px;
+  margin-bottom: 3rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.llm-hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(0, 206, 209, 0.15) 0%, transparent 60%),
+              radial-gradient(circle at 70% 50%, rgba(138, 43, 226, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.llm-hero-section h1 {
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
+  position: relative;
+}
+
+.llm-hero-description {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 700px;
+  margin: 0 auto 1rem auto;
+  line-height: 1.6;
+  position: relative;
+}
+
+.llm-hero-subtitle {
+  display: inline-block;
+  background: linear-gradient(135deg, #00ced1, #8a2be2);
+  padding: 0.5rem 1.5rem;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  position: relative;
+}
+
+.llm-vuln-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.llm-vuln-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.llm-vuln-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.llm-vuln-card .vuln-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.llm-vuln-card .vuln-number {
+  background: linear-gradient(135deg, #00ced1, #8a2be2);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.llm-vuln-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #1a1a2e;
+}
+
+.llm-vuln-card .vuln-description {
+  color: #555;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.llm-vuln-card .vuln-examples {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.llm-vuln-card .vuln-examples li {
+  color: #666;
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+}
+
+.llm-vuln-card .vuln-examples li::before {
+  content: '>';
+  color: #00ced1;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.llm-vuln-card .vuln-link {
+  display: inline-block;
+  background: linear-gradient(135deg, #00ced1, #8a2be2);
+  color: white;
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.llm-vuln-card .vuln-link:hover {
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.3);
+}
+
+.llm-presentation-info {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f0f0ff, #e8f8f8);
+  border-radius: 12px;
+}
+
+.llm-presentation-info h2 {
+  color: #1a1a2e;
+  margin: 0 0 1rem 0;
+}
+
+.llm-presentation-info p {
+  color: #555;
+  max-width: 600px;
+  margin: 0 auto 1.5rem auto;
+  line-height: 1.6;
+}
+
+.llm-start-button {
+  display: inline-block;
+  background: linear-gradient(135deg, #00ced1, #8a2be2);
+  color: white !important;
+  text-decoration: none;
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.llm-start-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(138, 43, 226, 0.3);
+  color: white;
+}
+
+.llm-back-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #8a2be2;
+  font-size: 0.9rem;
+}
+
+.llm-back-link:hover {
+  color: #00ced1;
+}
+
+@media (max-width: 768px) {
+  .llm-home-page {
+    padding: 1rem;
+  }
+
+  .llm-hero-section {
+    padding: 2rem 1rem;
+  }
+
+  .llm-hero-section h1 {
+    font-size: 1.8rem;
+  }
+
+  .llm-vuln-grid {
+    grid-template-columns: 1fr;
+  }
+}

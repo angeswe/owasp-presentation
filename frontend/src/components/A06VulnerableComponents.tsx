@@ -340,7 +340,7 @@ public class VulnerabilityScanner
       </div>
 
       <div className="navigation-section">
-        <a href="/a07" className="next-button">
+        <a href="/web/a07" className="next-button">
           Next: A07 - Authentication Failures →
         </a>
       </div>

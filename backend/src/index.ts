@@ -15,6 +15,18 @@ import a08Routes from './routes/a08-software-data-integrity-failures';
 import a09Routes from './routes/a09-security-logging-monitoring-failures';
 import a10Routes from './routes/a10-server-side-request-forgery';
 
+// Import LLM Top 10 vulnerability routes
+import llm01Routes from './routes/llm01-prompt-injection';
+import llm02Routes from './routes/llm02-sensitive-info-disclosure';
+import llm03Routes from './routes/llm03-supply-chain';
+import llm04Routes from './routes/llm04-data-poisoning';
+import llm05Routes from './routes/llm05-improper-output-handling';
+import llm06Routes from './routes/llm06-excessive-agency';
+import llm07Routes from './routes/llm07-system-prompt-leakage';
+import llm08Routes from './routes/llm08-vector-embedding-weaknesses';
+import llm09Routes from './routes/llm09-misinformation';
+import llm10Routes from './routes/llm10-unbounded-consumption';
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -58,6 +70,18 @@ app.use('/api/a08', a08Routes); // Software and Data Integrity Failures
 app.use('/api/a09', a09Routes); // Security Logging and Monitoring Failures
 app.use('/api/a10', a10Routes); // Server-Side Request Forgery
 
+// OWASP Top 10 for LLM Applications (2025) Routes
+app.use('/api/llm01', llm01Routes); // Prompt Injection
+app.use('/api/llm02', llm02Routes); // Sensitive Information Disclosure
+app.use('/api/llm03', llm03Routes); // Supply Chain
+app.use('/api/llm04', llm04Routes); // Data and Model Poisoning
+app.use('/api/llm05', llm05Routes); // Improper Output Handling
+app.use('/api/llm06', llm06Routes); // Excessive Agency
+app.use('/api/llm07', llm07Routes); // System Prompt Leakage
+app.use('/api/llm08', llm08Routes); // Vector and Embedding Weaknesses
+app.use('/api/llm09', llm09Routes); // Misinformation
+app.use('/api/llm10', llm10Routes); // Unbounded Consumption
+
 // API endpoints overview
 app.get('/api', (req, res) => {
   res.json({
@@ -74,6 +98,18 @@ app.get('/api', (req, res) => {
       'A08 - Software and Data Integrity Failures': '/api/a08',
       'A09 - Security Logging and Monitoring Failures': '/api/a09',
       'A10 - Server-Side Request Forgery': '/api/a10'
+    },
+    llmEndpoints: {
+      'LLM01 - Prompt Injection': '/api/llm01',
+      'LLM02 - Sensitive Information Disclosure': '/api/llm02',
+      'LLM03 - Supply Chain': '/api/llm03',
+      'LLM04 - Data and Model Poisoning': '/api/llm04',
+      'LLM05 - Improper Output Handling': '/api/llm05',
+      'LLM06 - Excessive Agency': '/api/llm06',
+      'LLM07 - System Prompt Leakage': '/api/llm07',
+      'LLM08 - Vector and Embedding Weaknesses': '/api/llm08',
+      'LLM09 - Misinformation': '/api/llm09',
+      'LLM10 - Unbounded Consumption': '/api/llm10'
     }
   });
 });

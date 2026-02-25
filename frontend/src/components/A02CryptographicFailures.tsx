@@ -257,7 +257,7 @@ public string CreateSecureJWT(ClaimsPrincipal user)
       </div>
 
       <div className="navigation-section">
-        <a href="/a03" className="next-button">
+        <a href="/web/a03" className="next-button">
           Next: A03 - Injection →
         </a>
       </div>

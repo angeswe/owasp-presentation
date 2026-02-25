@@ -386,7 +386,7 @@ public class TokenService : ITokenService
       </div>
 
       <div className="navigation-section">
-        <a href="/a08" className="next-button">
+        <a href="/web/a08" className="next-button">
           Next: A08 - Integrity Failures →
         </a>
       </div>

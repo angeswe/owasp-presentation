@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://owasp.org/assets/images/logo.png" alt="OWASP Logo" width="200">
+</p>
+
 # OWASP Top 10 Vulnerabilities Demo
 
 ⚠️ **CRITICAL WARNING** ⚠️
@@ -18,11 +22,12 @@ This application contains **intentional security vulnerabilities** for education
 
 ## Overview
 
-This is an interactive demonstration of the OWASP Top 10 (2021) security vulnerabilities. It includes:
+This is an interactive demonstration of the **OWASP Top 10 (2021)** web application vulnerabilities and the **OWASP Top 10 for LLM Applications (2025)**. It includes:
 
-- **Frontend**: React TypeScript application with navigation through all 10 vulnerabilities
+- **Frontend**: React TypeScript application with navigation through all 20 vulnerabilities
 - **Backend**: Node.js Express API with intentionally vulnerable endpoints
 - **Database**: SQLite with vulnerable schema and sample data
+- **LLM Simulation**: Simulated LLM responses streamed token-by-token via SSE
 
 ## Architecture
 
@@ -30,12 +35,15 @@ This is an interactive demonstration of the OWASP Top 10 (2021) security vulnera
 owasp-dangers/
 ├── frontend/          # React TypeScript application
 │   ├── src/
-│   │   ├── components/    # Vulnerability demonstration components
+│   │   ├── components/        # OWASP Top 10 vulnerability components
+│   │   ├── components/llm/    # LLM Top 10 vulnerability components
+│   │   ├── hooks/             # Shared React hooks (useLLMStream)
 │   │   └── ...
 ├── backend/           # Node.js Express API
 │   ├── src/
-│   │   ├── routes/        # Vulnerable API endpoints (A01-A10)
+│   │   ├── routes/        # Vulnerable API endpoints (A01-A10, LLM01-LLM10)
 │   │   ├── models/        # Database models with vulnerabilities
+│   │   ├── utils/         # Shared utilities (SSE streaming)
 │   │   └── ...
 ├── database/          # SQLite database files
 └── docs/              # Documentation and presentation materials
@@ -92,6 +100,58 @@ owasp-dangers/
     - Internal network access
     - Cloud metadata exposure
     - Port scanning
+
+## OWASP Top 10 for LLM Applications (2025) Coverage
+
+1. **LLM01 - Prompt Injection**
+   - Direct prompt override
+   - Indirect injection via data
+   - Role-playing attacks
+
+2. **LLM02 - Sensitive Information Disclosure**
+   - Training data memorization
+   - PII and credential extraction
+   - Cross-session data leakage
+
+3. **LLM03 - Supply Chain**
+   - Tampered/unverified models
+   - Malicious plugins with excessive permissions
+   - Weak integrity verification
+
+4. **LLM04 - Data and Model Poisoning**
+   - Unvalidated training data submission
+   - Bias injection
+   - Backdoor triggers
+
+5. **LLM05 - Improper Output Handling**
+   - XSS via LLM-generated HTML
+   - SQL injection via LLM output
+   - Command injection via generated shell commands
+
+6. **LLM06 - Excessive Agency**
+   - Overprivileged agent tools
+   - Actions without human approval
+   - Ambiguous request interpretation
+
+7. **LLM07 - System Prompt Leakage**
+   - Direct prompt extraction
+   - Indirect reformulation attacks
+   - Context window manipulation
+
+8. **LLM08 - Vector and Embedding Weaknesses**
+   - RAG without access control
+   - Cross-department document exposure
+   - Embedding inversion attacks
+
+9. **LLM09 - Misinformation**
+   - Hallucinated medical advice
+   - Fabricated legal citations
+   - False technical facts with confidence
+
+10. **LLM10 - Unbounded Consumption**
+    - No rate limiting
+    - No input size or budget caps
+    - Resource exhaustion attacks
 
 ## Setup Instructions
 
@@ -242,6 +302,18 @@ The application is designed for step-by-step presentations:
 - `/api/a09/*` - Logging Failures demos
 - `/api/a10/*` - SSRF demos
 
+### LLM Vulnerability Endpoints
+- `/api/llm01/*` - Prompt Injection demos (SSE streaming)
+- `/api/llm02/*` - Sensitive Information Disclosure demos (SSE streaming)
+- `/api/llm03/*` - Supply Chain demos
+- `/api/llm04/*` - Data and Model Poisoning demos (SSE streaming)
+- `/api/llm05/*` - Improper Output Handling demos (SSE streaming)
+- `/api/llm06/*` - Excessive Agency demos (SSE streaming)
+- `/api/llm07/*` - System Prompt Leakage demos (SSE streaming)
+- `/api/llm08/*` - Vector and Embedding Weaknesses demos (SSE streaming)
+- `/api/llm09/*` - Misinformation demos (SSE streaming)
+- `/api/llm10/*` - Unbounded Consumption demos (SSE streaming)
+
 ## Security Notes
 
 ### Intentional Vulnerabilities
@@ -339,6 +411,7 @@ frontend/src/
 ### OWASP References
 
 - [OWASP Top 10 2021](https://owasp.org/Top10/)
+- [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
 - [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)
 - [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/)
 
