@@ -19,9 +19,8 @@ RUN npm run build
 # Remove devDependencies after build
 RUN npm prune --production
 
-# The backend needs the database file
-# The database is located at the root of the backend directory
-COPY database ./database
+# Create the database directory (DB is initialized at runtime)
+RUN mkdir -p ./database
 
 # The backend runs on port 3001
 EXPOSE 3001
