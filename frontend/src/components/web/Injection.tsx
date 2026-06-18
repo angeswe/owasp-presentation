@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
-const A03Injection: React.FC = () => {
+const Injection: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [searchQuery, setSearchQuery] = useState("' OR 1=1--");
   const [commandHost, setCommandHost] = useState("8.8.8.8; ls");
   const [loginUsername, setLoginUsername] = useState("admin'--");
@@ -16,7 +17,7 @@ const A03Injection: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:3001/api/a03/search?query=${encodeURIComponent(
+        `${meta.apiBase}/search?query=${encodeURIComponent(
           searchQuery
         )}`
       );
@@ -30,7 +31,7 @@ const A03Injection: React.FC = () => {
   const testCommandInjection = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:3001/api/a03/ping", {
+      const res = await axios.post(`${meta.apiBase}/ping`, {
         host: commandHost,
       });
       setResponse(res.data);
@@ -43,7 +44,7 @@ const A03Injection: React.FC = () => {
   const testSqlLoginInjection = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:3001/api/a03/login", {
+      const res = await axios.post(`${meta.apiBase}/login`, {
         username: loginUsername,
         password: loginPassword,
       });
@@ -57,8 +58,8 @@ const A03Injection: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A03 - Injection</h1>
-        <div className="vulnerability-badge">OWASP #3</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
 
       <div className="vuln-description">
@@ -283,12 +284,14 @@ public async Task<User> FindUserByUsernameAsync(string username)
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a04" className="next-button">
-          Next: A04 - Insecure Design →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A03Injection;
+export default Injection;

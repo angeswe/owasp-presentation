@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
-
-const API_BASE = "http://localhost:3001/api";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
 interface UsersApiResponse {
   users: User[];
@@ -15,19 +14,23 @@ interface User {
   role: string;
 }
 
-const A01BrokenAccessControl: React.FC = () => {
+const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [userId, setUserId] = useState("1");
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [targetUserId, setTargetUserId] = useState("");
   const [newRole, setNewRole] = useState("admin");
+  // SSRF was folded into A01 in OWASP 2025 — demo state for the SSRF section.
+  const [ssrfUrl, setSsrfUrl] = useState("http://httpbin.org/json");
+  const [scanHost, setScanHost] = useState("localhost");
+  const [scanPort, setScanPort] = useState("22");
   const [showCSharpExamples, setShowCSharpExamples] = useState(false);
 
   const testDirectObjectReference = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/a01/user/${userId}`);
+      const res = await axios.get(`${meta.apiBase}/user/${userId}`);
       setResponse(res.data);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -37,9 +40,7 @@ const A01BrokenAccessControl: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get<UsersApiResponse>(
-        `${API_BASE}/a01/admin/users`
-      );
+      const res = await axios.get<UsersApiResponse>(`${meta.apiBase}/admin/users`);
       setUsers(res.data.users);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -48,6 +49,7 @@ const A01BrokenAccessControl: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRoleChange = async () => {
@@ -57,7 +59,7 @@ const A01BrokenAccessControl: React.FC = () => {
     }
     setLoading(true);
     try {
-      const res = await axios.put(`${API_BASE}/a01/user/${targetUserId}/role`, {
+      const res = await axios.put(`${meta.apiBase}/user/${targetUserId}/role`, {
         role: newRole,
       });
       setResponse(res.data);
@@ -72,7 +74,34 @@ const A01BrokenAccessControl: React.FC = () => {
   const testAdminAccess = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/a01/admin/users`);
+      const res = await axios.get(`${meta.apiBase}/admin/users`);
+      setResponse(res.data);
+    } catch (error: any) {
+      setResponse({ error: error.response?.data || error.message });
+    }
+    setLoading(false);
+  };
+
+  // SSRF (folded into A01 in 2025) — endpoints are nested under /ssrf.
+  const testSSRF = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${meta.apiBase}/ssrf/fetch-url`, {
+        url: ssrfUrl,
+      });
+      setResponse(res.data);
+    } catch (error: any) {
+      setResponse({ error: error.response?.data || error.message });
+    }
+    setLoading(false);
+  };
+
+  const handlePortScan = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `${meta.apiBase}/ssrf/check-service?host=${scanHost}&port=${scanPort}`
+      );
       setResponse(res.data);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -83,15 +112,16 @@ const A01BrokenAccessControl: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A01 - Broken Access Control</h1>
-        <div className="vulnerability-badge">OWASP #1</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
 
       <div className="vuln-description">
         <p>
           Access control enforces policies so users can't act outside of their
           intended permissions. When broken, users can access unauthorized
-          functionality or data.
+          functionality or data. In OWASP 2025, Server-Side Request Forgery
+          (SSRF) was merged into this category — see Demos 4 & 5.
         </p>
       </div>
 
@@ -209,6 +239,68 @@ const A01BrokenAccessControl: React.FC = () => {
         </div>
       </div>
 
+      <div className="demo-section">
+        <h2>🌐 Demo 4: SSRF — Unvalidated URL Fetch <span style={{ fontSize: "0.7em", opacity: 0.7 }}>(merged into A01 in 2025)</span></h2>
+        <p>
+          The server fetches content from a user-supplied URL without validating
+          it, so an attacker can force requests to internal services, the cloud
+          metadata endpoint, or local files — a form of broken access control at
+          the network layer.
+        </p>
+        <div className="demo-controls">
+          <label>
+            URL to fetch:
+            <input
+              type="text"
+              value={ssrfUrl}
+              onChange={(e) => setSsrfUrl(e.target.value)}
+              placeholder="http://httpbin.org/json"
+              style={{ width: "400px" }}
+            />
+          </label>
+          <button onClick={testSSRF} disabled={loading}>
+            Fetch URL
+          </button>
+        </div>
+
+        <div className="attack-examples">
+          <h4>🚨 Try these SSRF attacks:</h4>
+          <code>http://localhost:3001/api/broken-access-control/admin/users</code>
+          <code>http://169.254.169.254/latest/meta-data/</code>
+          <code>file:///etc/passwd</code>
+        </div>
+      </div>
+
+      <div className="demo-section">
+        <h2>📡 Demo 5: SSRF — Internal Port Scanning</h2>
+        <p>
+          SSRF also turns the server into a proxy for reconnaissance: an attacker
+          can scan the internal network from the server's vantage point to
+          discover services that are not exposed publicly.
+        </p>
+        <div className="demo-controls">
+          <label>
+            Host to Scan:
+            <input
+              type="text"
+              value={scanHost}
+              onChange={(e) => setScanHost(e.target.value)}
+            />
+          </label>
+          <label>
+            Port to Scan:
+            <input
+              type="text"
+              value={scanPort}
+              onChange={(e) => setScanPort(e.target.value)}
+            />
+          </label>
+          <button onClick={handlePortScan} disabled={loading}>
+            Scan Port
+          </button>
+        </div>
+      </div>
+
       {response && (
         <div className="response-section">
           <h3>Response:</h3>
@@ -265,6 +357,20 @@ public class UsersController : ControllerBase
 
         return user == null ? NotFound() : Ok(user);
     }
+}
+
+// SSRF (now part of A01): validate the URL before the server fetches it
+private static readonly HashSet<string> AllowedHosts = new() { "api.example.com" };
+
+public Uri ValidateOutboundUrl(string raw)
+{
+    if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri))
+        throw new ArgumentException("Invalid URL");
+    if (uri.Scheme != "https")                       // no file://, ftp://, http://
+        throw new SecurityException("HTTPS only");
+    if (!AllowedHosts.Contains(uri.Host))            // allowlist, never blocklist
+        throw new SecurityException("Host not allowed");
+    return uri;                                      // also re-check after DNS resolution
 }`}
             </pre>
             )}
@@ -288,9 +394,9 @@ public class UsersController : ControllerBase
             <code>[Authorize(Roles = "Admin")]</code>
           </div>
           <div className="fix-item">
-            <h4>4. Log Access Attempts</h4>
-            <p>Monitor and alert on unauthorized access attempts</p>
-            <code>logger.warn("Unauthorized access attempt")</code>
+            <h4>4. Validate Outbound URLs (SSRF)</h4>
+            <p>Allowlist hosts and block internal IPs before fetching</p>
+            <code>isAllowedHost(url) &amp;&amp; !isPrivateIP(url)</code>
           </div>
         </div>
 
@@ -314,20 +420,22 @@ public class UsersController : ControllerBase
               middleware/attributes for consistent checks
             </li>
             <li>
-              <strong>Regular Audits:</strong> Review access controls
-              periodically
+              <strong>SSRF Defense:</strong> Allowlist outbound hosts, block
+              link-local/metadata IPs, and disallow redirects
             </li>
           </ul>
         </div>
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a02" className="next-button">
-          Next: A02 - Cryptographic Failures →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A01BrokenAccessControl;
+export default BrokenAccessControl;

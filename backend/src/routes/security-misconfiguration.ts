@@ -8,7 +8,7 @@ const router = express.Router();
 // VULNERABILITY: Debug information exposure
 router.get('/debug', (req, res) => {
   res.json({
-    vulnerability: 'A05 - Security Misconfiguration',
+    vulnerability: 'A02 - Security Misconfiguration',
     description: 'Debug information exposure',
     environment: process.env,
     nodejs_version: process.version,
@@ -25,7 +25,7 @@ router.post('/admin-login', (req, res) => {
   // VULNERABLE: Default admin credentials
   if (username === 'admin' && password === 'admin') {
     res.json({
-      vulnerability: 'A05 - Security Misconfiguration',
+      vulnerability: 'A02 - Security Misconfiguration',
       description: 'Default admin credentials accepted',
       message: 'Admin access granted',
       explanation: 'Default credentials should be changed immediately'
@@ -44,7 +44,7 @@ router.get('/error', (req, res) => {
     // VULNERABLE: Exposing detailed error information
     const err = error as Error;
     res.status(500).json({
-      vulnerability: 'A05 - Security Misconfiguration',
+      vulnerability: 'A02 - Security Misconfiguration',
       description: 'Detailed error information exposure',
       error: err.message,
       stack: err.stack,
@@ -56,7 +56,7 @@ router.get('/error', (req, res) => {
 // VULNERABILITY: Unnecessary features enabled
 router.get('/features', (req, res) => {
   res.json({
-    vulnerability: 'A05 - Security Misconfiguration',
+    vulnerability: 'A02 - Security Misconfiguration',
     description: 'Unnecessary features enabled',
     features: {
       file_upload: true,

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
-const A04InsecureDesign: React.FC = () => {
+const InsecureDesign: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [resetUsername, setResetUsername] = useState("admin");
   const [newPassword, setNewPassword] = useState("new_password_123");
   const [itemId, setItemId] = useState("item-123");
@@ -17,7 +18,7 @@ const A04InsecureDesign: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a04/password-reset",
+        `${meta.apiBase}/password-reset`,
         {
           username: resetUsername,
           new_password: newPassword,
@@ -34,7 +35,7 @@ const A04InsecureDesign: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a04/purchase",
+        `${meta.apiBase}/purchase`,
         {
           item_id: itemId,
           quantity: quantity,
@@ -51,8 +52,8 @@ const A04InsecureDesign: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A04 - Insecure Design</h1>
-        <div className="vulnerability-badge">OWASP #4</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
       <div className="vuln-description">
         <p>
@@ -298,12 +299,14 @@ public class MfaService
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a05" className="next-button">
-          Next: A05 - Security Misconfiguration →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A04InsecureDesign;
+export default InsecureDesign;

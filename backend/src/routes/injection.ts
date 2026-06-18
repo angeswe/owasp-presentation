@@ -22,7 +22,7 @@ router.get('/search', async (req, res) => {
     const posts = await PostModel.searchPosts(query as string);
 
     res.json({
-      vulnerability: 'A03 - Injection (SQL)',
+      vulnerability: 'A05 - Injection (SQL)',
       description: 'SQL injection in search functionality',
       query: query,
       posts: posts,
@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
     const user = await UserModel.findByUsername(username);
 
     res.json({
-      vulnerability: 'A03 - Injection (SQL)',
+      vulnerability: 'A05 - Injection (SQL)',
       description: 'SQL injection in login functionality',
       username: username,
       user: user,
@@ -79,7 +79,7 @@ router.post('/ping', (req, res) => {
 
   exec(command, (error, stdout, stderr) => {
     res.json({
-      vulnerability: 'A03 - Injection (Command)',
+      vulnerability: 'A05 - Injection (Command)',
       description: 'Command injection in ping functionality',
       host: host,
       command: command,
@@ -107,7 +107,7 @@ router.post('/nosql-login', (req, res) => {
     }
 
     res.json({
-      vulnerability: 'A03 - Injection (NoSQL)',
+      vulnerability: 'A05 - Injection (NoSQL)',
       description: 'NoSQL injection vulnerability',
       query: query,
       explanation: 'Try JSON payload: {"username": {"$ne": null}, "password": {"$ne": null}}',
@@ -130,7 +130,7 @@ router.get('/ldap-search', (req, res) => {
   const ldapQuery = `(&(objectClass=person)(cn=${filter}))`;
 
   res.json({
-    vulnerability: 'A03 - Injection (LDAP)',
+    vulnerability: 'A05 - Injection (LDAP)',
     description: 'LDAP injection in user search',
     filter: filter,
     ldap_query: ldapQuery,
@@ -151,7 +151,7 @@ router.get('/xpath-search', (req, res) => {
   const xpathQuery = `//user[username/text()='${username}' and password/text()='${password}']`;
 
   res.json({
-    vulnerability: 'A03 - Injection (XPath)',
+    vulnerability: 'A05 - Injection (XPath)',
     description: 'XPath injection in XML-based authentication',
     username: username,
     password: password,
@@ -182,7 +182,7 @@ router.post('/template', (req, res) => {
     }
 
     res.json({
-      vulnerability: 'A03 - Injection (Template)',
+      vulnerability: 'A05 - Injection (Template)',
       description: 'Server-side template injection',
       name: name,
       template: template,
@@ -212,7 +212,7 @@ router.post('/expression', (req, res) => {
     const unsafeExpression = expression.replace(/\{value\}/g, value);
 
     res.json({
-      vulnerability: 'A03 - Injection (Expression Language)',
+      vulnerability: 'A05 - Injection (Expression Language)',
       description: 'Expression language injection',
       expression: expression,
       value: value,
@@ -240,7 +240,7 @@ router.post('/raw-sql', (req, res) => {
   db.all(sql, (err, rows) => {
     if (err) {
       res.status(500).json({
-        vulnerability: 'A03 - Injection (SQL)',
+        vulnerability: 'A05 - Injection (SQL)',
         description: 'Raw SQL execution',
         sql: sql,
         error: err.message,
@@ -248,7 +248,7 @@ router.post('/raw-sql', (req, res) => {
       });
     } else {
       res.json({
-        vulnerability: 'A03 - Injection (SQL)',
+        vulnerability: 'A05 - Injection (SQL)',
         description: 'Raw SQL execution',
         sql: sql,
         results: rows,

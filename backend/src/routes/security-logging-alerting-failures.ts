@@ -13,7 +13,7 @@ router.post('/sensitive-action', async (req, res) => {
   // This should log who did what, when, and to what
 
   res.json({
-    vulnerability: 'A09 - Security Logging and Monitoring Failures',
+    vulnerability: 'A09 - Security Logging and Alerting Failures',
     description: 'No logging of sensitive security events',
     action_performed: action,
     target: target,
@@ -32,7 +32,7 @@ router.post('/login-attempt', async (req, res) => {
     if (user) {
       // VULNERABLE: Successful logins not properly logged
       res.json({
-        vulnerability: 'A09 - Security Logging and Monitoring Failures',
+        vulnerability: 'A09 - Security Logging and Alerting Failures',
         description: 'Insufficient login logging',
         status: 'success',
         message: 'Login successful - but not logged properly'
@@ -40,7 +40,7 @@ router.post('/login-attempt', async (req, res) => {
     } else {
       // VULNERABLE: Failed attempts not logged with enough detail
       res.status(401).json({
-        vulnerability: 'A09 - Security Logging and Monitoring Failures',
+        vulnerability: 'A09 - Security Logging and Alerting Failures',
         status: 'failed',
         message: 'Login failed - suspicious activity not tracked'
       });
@@ -58,7 +58,7 @@ router.get('/suspicious-activity', (req, res) => {
   // Multiple rapid requests should trigger alerts
 
   res.json({
-    vulnerability: 'A09 - Security Logging and Monitoring Failures',
+    vulnerability: 'A09 - Security Logging and Alerting Failures',
     description: 'No anomaly detection',
     user_id: user_id,
     activity_count: activity_count,
@@ -78,7 +78,7 @@ router.get('/logs', (req, res) => {
   ];
 
   res.json({
-    vulnerability: 'A09 - Security Logging and Monitoring Failures',
+    vulnerability: 'A09 - Security Logging and Alerting Failures',
     description: 'Sensitive data in logs',
     logs: sampleLogs,
     explanation: 'Logs contain passwords, API keys, and PII that should be redacted'
@@ -91,7 +91,7 @@ router.post('/admin-action', (req, res) => {
 
   // VULNERABLE: Critical admin actions not monitored in real-time
   res.json({
-    vulnerability: 'A09 - Security Logging and Monitoring Failures',
+    vulnerability: 'A09 - Security Logging and Alerting Failures',
     description: 'No real-time monitoring of critical actions',
     admin_action: action,
     target: target_user,
@@ -113,7 +113,7 @@ router.get('/audit-trail/:user_id', (req, res) => {
   };
 
   res.json({
-    vulnerability: 'A09 - Security Logging and Monitoring Failures',
+    vulnerability: 'A09 - Security Logging and Alerting Failures',
     description: 'Insufficient audit trail',
     audit: incompleteAudit,
     missing_data: [

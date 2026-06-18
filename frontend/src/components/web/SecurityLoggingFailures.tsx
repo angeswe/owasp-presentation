@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
-const A09LoggingFailures: React.FC = () => {
+const SecurityLoggingFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [userId, setUserId] = useState("1");
   const [action, setAction] = useState("update_role");
   const [target, setTarget] = useState("user:2");
@@ -17,7 +18,7 @@ const A09LoggingFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a09/sensitive-action",
+        `${meta.apiBase}/sensitive-action`,
         {
           user_id: userId,
           action: action,
@@ -35,7 +36,7 @@ const A09LoggingFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a09/login-attempt",
+        `${meta.apiBase}/login-attempt`,
         {
           username: loginUsername,
           password: loginPassword,
@@ -51,7 +52,7 @@ const A09LoggingFailures: React.FC = () => {
   const handleFetchSensitiveLogs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:3001/api/a09/logs");
+      const res = await axios.get(`${meta.apiBase}/logs`);
       setResponse(res.data);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -62,8 +63,8 @@ const A09LoggingFailures: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A09 - Security Logging and Monitoring Failures</h1>
-        <div className="vulnerability-badge">OWASP #9</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
       <div className="vuln-description">
         <p>
@@ -351,12 +352,14 @@ public class AuthenticationLoggingMiddleware
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a10" className="next-button">
-          Next: A10 - SSRF →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A09LoggingFailures;
+export default SecurityLoggingFailures;

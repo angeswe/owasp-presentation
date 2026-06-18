@@ -4,47 +4,21 @@ This document provides a quick reference to secure coding practices for fixing O
 
 ## 📋 Quick Fix Checklist
 
+> Ordered to the **OWASP Top 10:2025**. SSRF is now part of A01; A03 and A10 are
+> new/expanded categories.
+
 ### A01 - Broken Access Control
 - [ ] Implement authentication middleware/attributes
 - [ ] Add authorization checks before resource access
 - [ ] Use role-based and resource-based access control
 - [ ] Validate user permissions on every request
 - [ ] Log unauthorized access attempts
+- [ ] **SSRF (merged into A01 in 2025):** validate/allowlist outbound URLs, block internal IPs & cloud metadata, don't follow redirects
 
-**JavaScript:** Use JWT middleware + role checks
-**C#:** Use `[Authorize]` attributes + Claims-based authorization
+**JavaScript:** JWT middleware + role checks; URL allowlisting for outbound fetches
+**C#:** `[Authorize]` attributes + Claims-based authorization; validated HttpClient
 
-### A02 - Cryptographic Failures
-- [ ] Hash passwords with bcrypt/PBKDF2 (12+ rounds)
-- [ ] Use strong encryption (AES-256-GCM)
-- [ ] Generate cryptographically secure random tokens
-- [ ] Store secrets in environment variables
-- [ ] Implement proper key management
-
-**JavaScript:** bcrypt + crypto.randomBytes()
-**C#:** KeyDerivation.Pbkdf2 + Data Protection API
-
-### A03 - Injection
-- [ ] Use parameterized queries/prepared statements
-- [ ] Validate and sanitize all user inputs
-- [ ] Implement input length limits
-- [ ] Use ORM/query builders when possible
-- [ ] Escape output when building dynamic content
-
-**JavaScript:** Use query parameters with db libraries
-**C#:** Use Entity Framework LINQ or parameterized SQL
-
-### A04 - Insecure Design
-- [ ] Implement rate limiting on sensitive endpoints
-- [ ] Add business logic validation
-- [ ] Use secure design patterns
-- [ ] Implement proper workflow controls
-- [ ] Add resource consumption limits
-
-**JavaScript:** express-rate-limit + validation middleware
-**C#:** Rate limiting middleware + business rule services
-
-### A05 - Security Misconfiguration
+### A02 - Security Misconfiguration
 - [ ] Remove debug information in production
 - [ ] Set security headers (CSP, HSTS, etc.)
 - [ ] Configure secure CORS policies
@@ -54,15 +28,45 @@ This document provides a quick reference to secure coding practices for fixing O
 **JavaScript:** helmet + secure middleware
 **C#:** Security headers + proper error pages
 
-### A06 - Vulnerable Components
-- [ ] Keep dependencies updated
-- [ ] Run security audits regularly
-- [ ] Remove unused dependencies
-- [ ] Use dependency scanning tools
-- [ ] Pin dependency versions
+### A03 - Software Supply Chain Failures
+- [ ] Keep dependencies updated; run audits (`npm audit` / `dotnet list package --vulnerable`)
+- [ ] Pin versions with integrity-checked lockfiles; remove unused dependencies
+- [ ] Pin internal scopes to a private registry to defeat dependency confusion
+- [ ] Verify artifact signatures & checksums; adopt SLSA provenance and an SBOM
+- [ ] Disable install lifecycle scripts (`npm ci --ignore-scripts`)
 
-**JavaScript:** npm audit + dependabot
-**C#:** NuGet security updates + scanning tools
+**JavaScript:** npm audit + dependabot, `--ignore-scripts`, scoped registries
+**C#:** NuGet scanning + `packageSourceMapping`, signed packages
+
+### A04 - Cryptographic Failures
+- [ ] Hash passwords with bcrypt/PBKDF2 (12+ rounds)
+- [ ] Use strong encryption (AES-256-GCM)
+- [ ] Generate cryptographically secure random tokens
+- [ ] Store secrets in environment variables
+- [ ] Implement proper key management
+
+**JavaScript:** bcrypt + crypto.randomBytes()
+**C#:** KeyDerivation.Pbkdf2 + Data Protection API
+
+### A05 - Injection
+- [ ] Use parameterized queries/prepared statements
+- [ ] Validate and sanitize all user inputs
+- [ ] Implement input length limits
+- [ ] Use ORM/query builders when possible
+- [ ] Escape output when building dynamic content
+
+**JavaScript:** Use query parameters with db libraries
+**C#:** Use Entity Framework LINQ or parameterized SQL
+
+### A06 - Insecure Design
+- [ ] Implement rate limiting on sensitive endpoints
+- [ ] Add business logic validation
+- [ ] Use secure design patterns
+- [ ] Implement proper workflow controls
+- [ ] Add resource consumption limits
+
+**JavaScript:** express-rate-limit + validation middleware
+**C#:** Rate limiting middleware + business rule services
 
 ### A07 - Authentication Failures
 - [ ] Enforce strong password policies
@@ -74,7 +78,7 @@ This document provides a quick reference to secure coding practices for fixing O
 **JavaScript:** passport.js + secure sessions
 **C#:** Identity framework + JWT tokens
 
-### A08 - Software and Data Integrity Failures
+### A08 - Software or Data Integrity Failures
 - [ ] Verify digital signatures on packages
 - [ ] Implement checksum validation
 - [ ] Use secure CI/CD pipelines
@@ -84,7 +88,7 @@ This document provides a quick reference to secure coding practices for fixing O
 **JavaScript:** package-lock.json + integrity checks
 **C#:** Package verification + secure deserialization
 
-### A09 - Security Logging and Monitoring Failures
+### A09 - Security Logging and Alerting Failures
 - [ ] Log all security-relevant events
 - [ ] Implement real-time monitoring
 - [ ] Set up alerting for suspicious activities
@@ -94,15 +98,15 @@ This document provides a quick reference to secure coding practices for fixing O
 **JavaScript:** winston + structured logging
 **C#:** Serilog + Application Insights
 
-### A10 - Server-Side Request Forgery (SSRF)
-- [ ] Validate and whitelist URLs
-- [ ] Implement network-level restrictions
-- [ ] Use URL parsing libraries
-- [ ] Avoid following redirects
-- [ ] Monitor outbound requests
+### A10 - Mishandling of Exceptional Conditions
+- [ ] Return generic client errors — never leak stack traces, SQL or file paths
+- [ ] Centralize error handling at a single boundary
+- [ ] Fail closed: an exception in a security check must deny, not allow
+- [ ] Disable debug/developer error pages in production
+- [ ] Log full detail server-side with a correlation id the client can quote
 
-**JavaScript:** URL validation + network policies
-**C#:** HttpClient with validation + network restrictions
+**JavaScript:** Express error middleware + `app.set('env', 'production')`
+**C#:** `app.UseExceptionHandler` + `IsDevelopment()` guard
 
 ## 🛠️ Essential Security Libraries
 
@@ -246,7 +250,7 @@ dotnet add package SecurityCodeScan.VS2019
 ## 📚 Additional Resources
 
 ### Documentation
-- [OWASP Top 10 2021](https://owasp.org/Top10/)
+- [OWASP Top 10 2025](https://owasp.org/Top10/2025/)
 - [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/)
 - [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
 - [.NET Security Guidelines](https://docs.microsoft.com/en-us/dotnet/standard/security/)

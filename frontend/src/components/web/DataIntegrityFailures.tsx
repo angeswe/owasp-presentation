@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
-const A08IntegrityFailures: React.FC = () => {
+const DataIntegrityFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [serializedData, setSerializedData] = useState(
     '{"username":"guest","role":"user"}'
   );
@@ -16,7 +17,7 @@ const A08IntegrityFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a08/deserialize",
+        `${meta.apiBase}/deserialize`,
         {
           serialized_data: serializedData,
         }
@@ -32,7 +33,7 @@ const A08IntegrityFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        "http://localhost:3001/api/a08/update-info"
+        `${meta.apiBase}/update-info`
       );
       setResponse(res.data);
     } catch (error: any) {
@@ -52,7 +53,7 @@ const A08IntegrityFailures: React.FC = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a08/upload",
+        `${meta.apiBase}/upload`,
         formData,
         {
           headers: {
@@ -70,8 +71,8 @@ const A08IntegrityFailures: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A08 - Software and Data Integrity Failures</h1>
-        <div className="vulnerability-badge">OWASP #8</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
       <div className="vuln-description">
         <p>
@@ -410,12 +411,14 @@ public class DeploymentIntegrityChecker
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a09" className="next-button">
-          Next: A09 - Logging Failures →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A08IntegrityFailures;
+export default DataIntegrityFailures;

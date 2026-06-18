@@ -3,17 +3,19 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { initializeDatabase } from './models/database';
 
-// Import all vulnerability routes
-import a01Routes from './routes/a01-broken-access-control';
-import a02Routes from './routes/a02-cryptographic-failures';
-import a03Routes from './routes/a03-injection';
-import a04Routes from './routes/a04-insecure-design';
-import a05Routes from './routes/a05-security-misconfiguration';
-import a06Routes from './routes/a06-vulnerable-components';
-import a07Routes from './routes/a07-identification-authentication-failures';
-import a08Routes from './routes/a08-software-data-integrity-failures';
-import a09Routes from './routes/a09-security-logging-monitoring-failures';
-import a10Routes from './routes/a10-server-side-request-forgery';
+// Import all OWASP Top 10:2025 vulnerability routes.
+// Files are named by slug (not rank) and mounted in 2025 order, so a future
+// reshuffle is just a reorder here — no file renames. SSRF is folded into A01.
+import brokenAccessControlRoutes from './routes/broken-access-control';         // A01 (incl. SSRF)
+import securityMisconfigurationRoutes from './routes/security-misconfiguration'; // A02
+import supplyChainRoutes from './routes/software-supply-chain-failures';        // A03
+import cryptographicFailuresRoutes from './routes/cryptographic-failures';      // A04
+import injectionRoutes from './routes/injection';                               // A05
+import insecureDesignRoutes from './routes/insecure-design';                    // A06
+import authenticationFailuresRoutes from './routes/authentication-failures';    // A07
+import dataIntegrityFailuresRoutes from './routes/data-integrity-failures';     // A08
+import securityLoggingRoutes from './routes/security-logging-alerting-failures'; // A09
+import mishandlingRoutes from './routes/mishandling-exceptional-conditions';    // A10 (new)
 
 // Import LLM Top 10 vulnerability routes
 import llm01Routes from './routes/llm01-prompt-injection';
@@ -58,17 +60,18 @@ app.get('/health', (req, res) => {
   });
 });
 
-// OWASP Top 10 Vulnerability Routes
-app.use('/api/a01', a01Routes); // Broken Access Control
-app.use('/api/a02', a02Routes); // Cryptographic Failures
-app.use('/api/a03', a03Routes); // Injection
-app.use('/api/a04', a04Routes); // Insecure Design
-app.use('/api/a05', a05Routes); // Security Misconfiguration
-app.use('/api/a06', a06Routes); // Vulnerable Components
-app.use('/api/a07', a07Routes); // Identification and Authentication Failures
-app.use('/api/a08', a08Routes); // Software and Data Integrity Failures
-app.use('/api/a09', a09Routes); // Security Logging and Monitoring Failures
-app.use('/api/a10', a10Routes); // Server-Side Request Forgery
+// OWASP Top 10:2025 Vulnerability Routes — mounted by slug so ranks can be
+// reshuffled without changing any URL.
+app.use('/api/broken-access-control', brokenAccessControlRoutes);          // A01 (SSRF at /ssrf)
+app.use('/api/security-misconfiguration', securityMisconfigurationRoutes); // A02
+app.use('/api/software-supply-chain-failures', supplyChainRoutes);         // A03
+app.use('/api/cryptographic-failures', cryptographicFailuresRoutes);       // A04
+app.use('/api/injection', injectionRoutes);                                // A05
+app.use('/api/insecure-design', insecureDesignRoutes);                     // A06
+app.use('/api/authentication-failures', authenticationFailuresRoutes);     // A07
+app.use('/api/data-integrity-failures', dataIntegrityFailuresRoutes);      // A08
+app.use('/api/security-logging-alerting-failures', securityLoggingRoutes); // A09
+app.use('/api/mishandling-exceptional-conditions', mishandlingRoutes);     // A10 (new)
 
 // OWASP Top 10 for LLM Applications (2025) Routes
 app.use('/api/llm01', llm01Routes); // Prompt Injection
@@ -88,16 +91,16 @@ app.get('/api', (req, res) => {
     message: 'OWASP Top 10 Vulnerability Demonstration API',
     warning: '⚠️ This API contains intentional security vulnerabilities',
     endpoints: {
-      'A01 - Broken Access Control': '/api/a01',
-      'A02 - Cryptographic Failures': '/api/a02',
-      'A03 - Injection': '/api/a03',
-      'A04 - Insecure Design': '/api/a04',
-      'A05 - Security Misconfiguration': '/api/a05',
-      'A06 - Vulnerable Components': '/api/a06',
-      'A07 - Identification and Authentication Failures': '/api/a07',
-      'A08 - Software and Data Integrity Failures': '/api/a08',
-      'A09 - Security Logging and Monitoring Failures': '/api/a09',
-      'A10 - Server-Side Request Forgery': '/api/a10'
+      'A01 - Broken Access Control (incl. SSRF)': '/api/broken-access-control',
+      'A02 - Security Misconfiguration': '/api/security-misconfiguration',
+      'A03 - Software Supply Chain Failures': '/api/software-supply-chain-failures',
+      'A04 - Cryptographic Failures': '/api/cryptographic-failures',
+      'A05 - Injection': '/api/injection',
+      'A06 - Insecure Design': '/api/insecure-design',
+      'A07 - Authentication Failures': '/api/authentication-failures',
+      'A08 - Software or Data Integrity Failures': '/api/data-integrity-failures',
+      'A09 - Security Logging and Alerting Failures': '/api/security-logging-alerting-failures',
+      'A10 - Mishandling of Exceptional Conditions': '/api/mishandling-exceptional-conditions'
     },
     llmEndpoints: {
       'LLM01 - Prompt Injection': '/api/llm01',

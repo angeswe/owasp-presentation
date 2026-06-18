@@ -25,7 +25,7 @@ router.post('/weak-encryption', (req, res) => {
     encrypted += cipher.final('hex');
 
     res.json({
-      vulnerability: 'A02 - Cryptographic Failures',
+      vulnerability: 'A04 - Cryptographic Failures',
       description: 'Using weak RC4 encryption with predictable key',
       encrypted: encrypted,
       algorithm: algorithm,
@@ -37,7 +37,7 @@ router.post('/weak-encryption', (req, res) => {
     const hash = crypto.createHash('md5').update(data).digest('hex');
 
     res.json({
-      vulnerability: 'A02 - Cryptographic Failures',
+      vulnerability: 'A04 - Cryptographic Failures',
       description: 'Using weak MD5 hash instead of encryption',
       encrypted: hash,
       algorithm: 'md5',
@@ -62,7 +62,7 @@ router.post('/login-plaintext', async (req, res) => {
 
     if (user) {
       res.json({
-        vulnerability: 'A02 - Cryptographic Failures',
+        vulnerability: 'A04 - Cryptographic Failures',
         description: 'Plain text password storage and authentication',
         user: {
           id: user.id,
@@ -92,7 +92,7 @@ router.post('/weak-hash', (req, res) => {
   const hash = crypto.createHash('md5').update(password).digest('hex');
 
   res.json({
-    vulnerability: 'A02 - Cryptographic Failures',
+    vulnerability: 'A04 - Cryptographic Failures',
     description: 'Using MD5 for password hashing',
     password: password,
     hash: hash,
@@ -116,7 +116,7 @@ router.post('/hardcoded-secret', (req, res) => {
   const signature = hmac.digest('hex');
 
   res.json({
-    vulnerability: 'A02 - Cryptographic Failures',
+    vulnerability: 'A04 - Cryptographic Failures',
     description: 'Using hardcoded secret for HMAC',
     data: data,
     signature: signature,
@@ -143,7 +143,7 @@ router.post('/weak-aes', (req, res) => {
   encrypted += cipher.final('hex');
 
   res.json({
-    vulnerability: 'A02 - Cryptographic Failures',
+    vulnerability: 'A04 - Cryptographic Failures',
     description: 'Weak AES encryption with predictable key and IV',
     encrypted: encrypted,
     key: key.toString('hex'),
@@ -161,7 +161,7 @@ router.get('/insecure-random', (req, res) => {
   const sessionId = `session_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
   res.json({
-    vulnerability: 'A02 - Cryptographic Failures',
+    vulnerability: 'A04 - Cryptographic Failures',
     description: 'Insecure random number generation',
     insecure_token: insecureToken,
     session_id: sessionId,
@@ -181,7 +181,7 @@ router.post('/fake-encryption', (req, res) => {
   const encoded = Buffer.from(sensitive_data).toString('base64');
 
   res.json({
-    vulnerability: 'A02 - Cryptographic Failures',
+    vulnerability: 'A04 - Cryptographic Failures',
     description: 'Base64 encoding mistaken for encryption',
     original: sensitive_data,
     encoded: encoded,
@@ -205,7 +205,7 @@ router.post('/weak-key-derivation', (req, res) => {
   const derived = crypto.pbkdf2Sync(password, weakSalt, iterations, 32, 'sha1');
 
   res.json({
-    vulnerability: 'A02 - Cryptographic Failures',
+    vulnerability: 'A04 - Cryptographic Failures',
     description: 'Weak key derivation function',
     password: password,
     salt: weakSalt,
@@ -222,7 +222,7 @@ router.get('/insecure-request', async (req, res) => {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
     res.json({
-      vulnerability: 'A02 - Cryptographic Failures',
+      vulnerability: 'A04 - Cryptographic Failures',
       description: 'TLS certificate validation bypass',
       warning: 'NODE_TLS_REJECT_UNAUTHORIZED set to 0',
       explanation: 'Bypassing certificate validation makes applications vulnerable to MITM attacks'
