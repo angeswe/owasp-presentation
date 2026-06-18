@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -257,9 +258,9 @@ public string CreateSecureJWT(ClaimsPrincipal user)
       </div>
 
       <div className="navigation-section">
-        <a href="/web/a03" className="next-button">
+        <Link to="/web/a03" className="next-button">
           Next: A03 - Injection →
-        </a>
+        </Link>
       </div>
     </div>
   );

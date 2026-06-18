@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -386,9 +387,9 @@ public class TokenService : ITokenService
       </div>
 
       <div className="navigation-section">
-        <a href="/web/a08" className="next-button">
+        <Link to="/web/a08" className="next-button">
           Next: A08 - Integrity Failures →
-        </a>
+        </Link>
       </div>
     </div>
   );

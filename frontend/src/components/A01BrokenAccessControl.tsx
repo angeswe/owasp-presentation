@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -321,9 +322,9 @@ public class UsersController : ControllerBase
       </div>
 
       <div className="navigation-section">
-        <a href="/web/a02" className="next-button">
+        <Link to="/web/a02" className="next-button">
           Next: A02 - Cryptographic Failures →
-        </a>
+        </Link>
       </div>
     </div>
   );

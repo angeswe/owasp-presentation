@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -297,9 +298,9 @@ public class MfaService
       </div>
 
       <div className="navigation-section">
-        <a href="/web/a05" className="next-button">
+        <Link to="/web/a05" className="next-button">
           Next: A05 - Security Misconfiguration →
-        </a>
+        </Link>
       </div>
     </div>
   );

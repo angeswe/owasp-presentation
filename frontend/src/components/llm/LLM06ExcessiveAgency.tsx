@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useLLMStream } from "../../hooks/useLLMStream";
 import "../VulnerabilityPage.css";
@@ -134,9 +135,9 @@ const LLM06ExcessiveAgency: React.FC = () => {
       </div>
 
       <div className="navigation-section">
-        <a href="/llm/l07" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
+        <Link to="/llm/l07" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
           Next: LLM07 - System Prompt Leakage &rarr;
-        </a>
+        </Link>
       </div>
 
       <style>{`

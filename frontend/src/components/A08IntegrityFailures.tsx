@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -409,9 +410,9 @@ public class DeploymentIntegrityChecker
       </div>
 
       <div className="navigation-section">
-        <a href="/web/a09" className="next-button">
+        <Link to="/web/a09" className="next-button">
           Next: A09 - Logging Failures →
-        </a>
+        </Link>
       </div>
     </div>
   );

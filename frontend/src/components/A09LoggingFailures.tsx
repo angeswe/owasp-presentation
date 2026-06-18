@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -350,9 +351,9 @@ public class AuthenticationLoggingMiddleware
       </div>
 
       <div className="navigation-section">
-        <a href="/web/a10" className="next-button">
+        <Link to="/web/a10" className="next-button">
           Next: A10 - SSRF →
-        </a>
+        </Link>
       </div>
     </div>
   );
