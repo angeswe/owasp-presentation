@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 
@@ -31,19 +31,37 @@ import LLM08VectorEmbeddingWeaknesses from './components/llm/LLM08VectorEmbeddin
 import LLM09Misinformation from './components/llm/LLM09Misinformation';
 import LLM10UnboundedConsumption from './components/llm/LLM10UnboundedConsumption';
 
+// Import Attack Surface Exposures Top 10 components
+import ASMHomePage from './components/asm/ASMHomePage';
+import ASMNavigation from './components/asm/ASMNavigation';
+
 function AppContent() {
   const location = useLocation();
   const isLLMRoute = location.pathname.startsWith('/llm');
   const isWebRoute = location.pathname.startsWith('/web');
+  const isASMRoute = location.pathname.startsWith('/asm');
+
+  // Scroll to the top whenever the route changes so each slide starts at the top.
+  // useLayoutEffect runs before the browser paints, so the new page never flashes
+  // at the previous scroll position.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <div className="App">
-      <header className={`App-header ${isLLMRoute ? 'App-header-llm' : ''}`}>
+      <header
+        className={`App-header ${isLLMRoute ? 'App-header-llm' : ''} ${
+          isASMRoute ? 'App-header-asm' : ''
+        }`}
+      >
         <h1>
           {isLLMRoute
             ? '🤖 OWASP LLM Top 10 Demo 🤖'
             : isWebRoute
             ? '⚠️ OWASP Web Top 10 Demo ⚠️'
+            : isASMRoute
+            ? '🛰️ Top 10 Attack Surface Exposures 🛰️'
             : '⚠️ OWASP Top 10 Security Demo ⚠️'}
         </h1>
         <p className="warning">FOR EDUCATIONAL PURPOSES ONLY</p>
@@ -51,6 +69,7 @@ function AppContent() {
 
       {isWebRoute && <Navigation />}
       {isLLMRoute && <LLMNavigation />}
+      {isASMRoute && <ASMNavigation />}
 
       <main className="App-main">
         <Routes>
@@ -81,6 +100,9 @@ function AppContent() {
           <Route path="/llm/l08" element={<LLM08VectorEmbeddingWeaknesses />} />
           <Route path="/llm/l09" element={<LLM09Misinformation />} />
           <Route path="/llm/l10" element={<LLM10UnboundedConsumption />} />
+
+          {/* Attack Surface Exposures Top 10 — single summary page */}
+          <Route path="/asm" element={<ASMHomePage />} />
         </Routes>
       </main>
     </div>

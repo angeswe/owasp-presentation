@@ -150,6 +150,43 @@
    - Training platforms
    - Security tools
 
+## Bonus Track: Top 10 Attack Surface Exposures (2026)
+
+This track shifts the lens from *application vulnerability classes* to *exposures* —
+services and panels that should never have been reachable from the public internet.
+It is based on an analysis of ~3,000 real-world attack surfaces (reported by The
+Hacker News, "The Top 10 Attack Surface Exposures in 2026").
+
+**Framing for the audience:** "The OWASP lists tell you how attackers break in. This
+list is about the doors you left open." Lead with the headline stats:
+- 60% had at least one HTTP panel exposed
+- 49% exposed a risky port or service
+- 42% had a database reachable directly from the internet
+- 30% exposed files or information that shouldn't be
+
+**Demo flow (navigate to `/asm`):** everything lives on a single page. Each of the ten
+cards has a collapsible **"Talk-through details"** section — expand it to reveal the
+simulated recon scan (what an attacker sees), the impact, and the remediation. Read the
+title + stat + port, then expand to confirm. For a full per-exposure script, see
+[`ATTACK_SURFACE_PRESENTATION_GUIDE.md`](./ATTACK_SURFACE_PRESENTATION_GUIDE.md).
+
+| #    | Exposure                  | Seen on | Talking point                                  |
+|------|---------------------------|---------|------------------------------------------------|
+| AS01 | MySQL Database Exposed    | 26%     | Open 3306 + weak root password = ransomware    |
+| AS02 | Postgres Database Exposed | 16%     | `trust` auth needs no password at all          |
+| AS03 | API Documentation Exposed | 15%     | Swagger/GraphQL maps every admin endpoint      |
+| AS04 | WordPress Admin Panel     | 15%     | /wp-login brute force + plugin CVEs            |
+| AS05 | Remote Desktop (RDP)      | 11%     | Top ransomware entry point; BlueKeep           |
+| AS06 | SNMP Service              | 9%      | Default `public` string leaks the network      |
+| AS07 | phpMyAdmin Panel          | 8%      | A browser gateway straight into the DB         |
+| AS08 | UPnP Service              | 8%      | WAN UPnP rewrites NAT; SSDP amplification      |
+| AS09 | NTP Service               | 7%      | monlist amplification DDoS                      |
+| AS10 | RPC Portmapper            | 7%      | rpcinfo enumerates NFS/NIS to target           |
+
+**Key takeaway:** patching matters, but attack-surface *reduction* — turning off and
+firewalling what never needed to be public — prevents whole classes of attack before
+a single exploit is written.
+
 ## Presentation Tips
 
 ### Audience Engagement

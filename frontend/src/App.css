@@ -18,6 +18,10 @@
   background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
 }
 
+.App-header-asm {
+  background: linear-gradient(135deg, #1c1917 0%, #7c2d12 50%, #431407 100%);
+}
+
 .App-header h1 {
   margin: 0;
   font-size: 2rem;

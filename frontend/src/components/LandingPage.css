@@ -62,6 +62,33 @@
   box-shadow: 0 4px 16px rgba(48, 43, 99, 0.3);
 }
 
+.landing-card--asm {
+  background: linear-gradient(135deg, #7c2d12, #c2410c, #ea580c);
+  color: white;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.3);
+}
+
+.landing-card--asm::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(249, 115, 22, 0.2) 0%, transparent 60%),
+              radial-gradient(circle at 70% 50%, rgba(251, 146, 60, 0.18) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.landing-card--asm .landing-card__year {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.landing-card--asm .landing-card__cta {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
 .landing-card--llm::before {
   content: '';
   position: absolute;
