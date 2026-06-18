@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -439,9 +440,9 @@ public class FetchUrlRequest
       </div>
 
       <div className="navigation-section">
-        <a href="/web" className="next-button">
+        <Link to="/web" className="next-button">
           Presentation Complete - Return Home →
-        </a>
+        </Link>
       </div>
     </div>
   );

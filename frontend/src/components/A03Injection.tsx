@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./VulnerabilityPage.css";
 
@@ -282,9 +283,9 @@ public async Task<User> FindUserByUsernameAsync(string username)
       </div>
 
       <div className="navigation-section">
-        <a href="/web/a04" className="next-button">
+        <Link to="/web/a04" className="next-button">
           Next: A04 - Insecure Design →
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useLLMStream } from "../../hooks/useLLMStream";
 import "../VulnerabilityPage.css";
@@ -202,9 +203,9 @@ const LLM10UnboundedConsumption: React.FC = () => {
       </div>
 
       <div className="navigation-section">
-        <a href="/llm" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
+        <Link to="/llm" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
           &larr; Back to LLM Top 10 Home
-        </a>
+        </Link>
       </div>
 
       <style>{`

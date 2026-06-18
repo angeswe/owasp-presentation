@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useLLMStream } from "../../hooks/useLLMStream";
 import "../VulnerabilityPage.css";
@@ -196,9 +197,9 @@ const LLM08VectorEmbeddingWeaknesses: React.FC = () => {
       </div>
 
       <div className="navigation-section">
-        <a href="/llm/l09" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
+        <Link to="/llm/l09" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
           Next: LLM09 - Misinformation &rarr;
-        </a>
+        </Link>
       </div>
 
       <style>{`

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useLLMStream } from "../../hooks/useLLMStream";
 import "../VulnerabilityPage.css";
 
@@ -143,9 +144,9 @@ const LLM01PromptInjection: React.FC = () => {
       </div>
 
       <div className="navigation-section">
-        <a href="/llm/l02" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
+        <Link to="/llm/l02" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
           Next: LLM02 - Sensitive Information Disclosure &rarr;
-        </a>
+        </Link>
       </div>
 
       <style>{`

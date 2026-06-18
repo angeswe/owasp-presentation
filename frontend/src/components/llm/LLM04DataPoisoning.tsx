@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useLLMStream } from "../../hooks/useLLMStream";
 import "../VulnerabilityPage.css";
@@ -189,9 +190,9 @@ const LLM04DataPoisoning: React.FC = () => {
       </div>
 
       <div className="navigation-section">
-        <a href="/llm/l05" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
+        <Link to="/llm/l05" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
           Next: LLM05 - Improper Output Handling &rarr;
-        </a>
+        </Link>
       </div>
 
       <style>{`

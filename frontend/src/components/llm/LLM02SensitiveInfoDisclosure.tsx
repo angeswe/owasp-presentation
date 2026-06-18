@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useLLMStream } from "../../hooks/useLLMStream";
 import "../VulnerabilityPage.css";
 
@@ -114,9 +115,9 @@ const LLM02SensitiveInfoDisclosure: React.FC = () => {
       </div>
 
       <div className="navigation-section">
-        <a href="/llm/l03" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
+        <Link to="/llm/l03" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
           Next: LLM03 - Supply Chain &rarr;
-        </a>
+        </Link>
       </div>
 
       <style>{`
