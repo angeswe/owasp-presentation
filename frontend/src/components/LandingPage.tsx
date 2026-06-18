@@ -34,6 +34,17 @@ const LandingPage: React.FC = () => {
           </p>
           <span className="landing-card__cta">Explore LLM Top 10 &rarr;</span>
         </Link>
+
+        <Link to="/asm" className="landing-card landing-card--asm">
+          <span className="landing-card__year">2026</span>
+          <h2>Attack Surface Top 10</h2>
+          <p>
+            The exposures attackers find most often across the internet — exposed
+            databases, admin panels, and legacy services that should never face
+            the public.
+          </p>
+          <span className="landing-card__cta">Explore Attack Surface Top 10 &rarr;</span>
+        </Link>
       </div>
     </div>
   );

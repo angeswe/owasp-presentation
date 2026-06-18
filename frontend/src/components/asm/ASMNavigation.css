@@ -1,0 +1,80 @@
+.asm-navigation {
+  background: linear-gradient(135deg, #1c1917, #7c2d12);
+  padding: 0.75rem 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.asm-nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.asm-nav-item {
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.asm-nav-item:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.asm-nav-item.active {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  font-weight: bold;
+}
+
+.asm-home-link {
+  font-weight: bold;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  padding-right: 1rem;
+  margin-right: 0.25rem;
+}
+
+.asm-vulnerability-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.asm-nav-item .vuln-number {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fb923c;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.asm-nav-item.active .vuln-number {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.asm-nav-item .vuln-title {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .asm-nav-item .vuln-title {
+    display: inline;
+  }
+}
