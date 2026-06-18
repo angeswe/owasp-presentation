@@ -33,7 +33,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
 
   // VULNERABLE: No file integrity verification
   res.json({
-    vulnerability: 'A08 - Software and Data Integrity Failures',
+    vulnerability: 'A08 - Software or Data Integrity Failures',
     description: 'Unsigned/unverified file upload',
     filename: req.file.filename,
     original_name: req.file.originalname,
@@ -53,7 +53,7 @@ router.post('/deserialize', (req, res) => {
     const data = JSON.parse(serialized_data);
 
     res.json({
-      vulnerability: 'A08 - Software and Data Integrity Failures',
+      vulnerability: 'A08 - Software or Data Integrity Failures',
       description: 'Insecure deserialization',
       deserialized: data,
       explanation: 'Deserializing untrusted data can lead to code execution'
@@ -61,7 +61,7 @@ router.post('/deserialize', (req, res) => {
   } catch (error) {
     const err = error as Error;
     res.status(400).json({
-      vulnerability: 'A08 - Software and Data Integrity Failures',
+      vulnerability: 'A08 - Software or Data Integrity Failures',
       error: 'Deserialization failed',
       message: err.message
     });
@@ -71,7 +71,7 @@ router.post('/deserialize', (req, res) => {
 // VULNERABILITY: Untrusted CDN/external resources
 router.get('/external-resources', (req, res) => {
   res.json({
-    vulnerability: 'A08 - Software and Data Integrity Failures',
+    vulnerability: 'A08 - Software or Data Integrity Failures',
     description: 'Loading resources from untrusted sources',
     external_scripts: [
       'http://untrusted-cdn.com/jquery.js',
@@ -85,7 +85,7 @@ router.get('/external-resources', (req, res) => {
 // VULNERABILITY: No software integrity verification
 router.get('/update-info', (req, res) => {
   res.json({
-    vulnerability: 'A08 - Software and Data Integrity Failures',
+    vulnerability: 'A08 - Software or Data Integrity Failures',
     description: 'Software updates without integrity verification',
     update_info: {
       version: '2.0.1',
@@ -103,7 +103,7 @@ router.post('/deploy', (req, res) => {
 
   // VULNERABLE: No verification of deployment packages
   res.json({
-    vulnerability: 'A08 - Software and Data Integrity Failures',
+    vulnerability: 'A08 - Software or Data Integrity Failures',
     description: 'Insecure CI/CD pipeline',
     deployment: {
       package: package_name,

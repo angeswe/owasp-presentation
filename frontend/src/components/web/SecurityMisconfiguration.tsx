@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
-const A05SecurityMisconfiguration: React.FC = () => {
+const SecurityMisconfiguration: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin");
   const [response, setResponse] = useState<any>(null);
@@ -14,7 +15,7 @@ const A05SecurityMisconfiguration: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a05/admin-login",
+        `${meta.apiBase}/admin-login`,
         {
           username,
           password,
@@ -31,7 +32,7 @@ const A05SecurityMisconfiguration: React.FC = () => {
     setLoading(true);
     try {
       // This request is expected to fail and return a detailed error
-      await axios.get("http://localhost:3001/api/a05/error");
+      await axios.get(`${meta.apiBase}/error`);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
     }
@@ -41,7 +42,7 @@ const A05SecurityMisconfiguration: React.FC = () => {
   const handleDebugInfo = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:3001/api/a05/debug");
+      const res = await axios.get(`${meta.apiBase}/debug`);
       setResponse(res.data);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -52,8 +53,8 @@ const A05SecurityMisconfiguration: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A05 - Security Misconfiguration</h1>
-        <div className="vulnerability-badge">OWASP #5</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
       <div className="vuln-description">
         <p>
@@ -309,12 +310,14 @@ public class ConfigurationValidator
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a06" className="next-button">
-          Next: A06 - Vulnerable Components →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A05SecurityMisconfiguration;
+export default SecurityMisconfiguration;

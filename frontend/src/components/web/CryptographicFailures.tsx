@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
-const A02CryptographicFailures: React.FC = () => {
+const CryptographicFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [hashInput, setHashInput] = useState("password");
   const [base64Input, setBase64Input] = useState("sensitive-data");
   const [response, setResponse] = useState<any>(null);
@@ -14,7 +15,7 @@ const A02CryptographicFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a02/fake-encryption",
+        `${meta.apiBase}/fake-encryption`,
         {
           sensitive_data: base64Input,
         }
@@ -30,7 +31,7 @@ const A02CryptographicFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a02/weak-hash",
+        `${meta.apiBase}/weak-hash`,
         {
           password: hashInput,
         }
@@ -45,8 +46,8 @@ const A02CryptographicFailures: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A02 - Cryptographic Failures</h1>
-        <div className="vulnerability-badge">OWASP #2</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
 
       <div className="vuln-description">
@@ -258,12 +259,14 @@ public string CreateSecureJWT(ClaimsPrincipal user)
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a03" className="next-button">
-          Next: A03 - Injection →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A02CryptographicFailures;
+export default CryptographicFailures;

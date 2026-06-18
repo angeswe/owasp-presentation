@@ -5,17 +5,10 @@ import './App.css';
 // Import components
 import LandingPage from './components/LandingPage';
 import WebHomePage from './components/WebHomePage';
-import A01BrokenAccessControl from './components/A01BrokenAccessControl';
-import A02CryptographicFailures from './components/A02CryptographicFailures';
-import A03Injection from './components/A03Injection';
-import A04InsecureDesign from './components/A04InsecureDesign';
-import A05SecurityMisconfiguration from './components/A05SecurityMisconfiguration';
-import A06VulnerableComponents from './components/A06VulnerableComponents';
-import A07AuthenticationFailures from './components/A07AuthenticationFailures';
-import A08IntegrityFailures from './components/A08IntegrityFailures';
-import A09LoggingFailures from './components/A09LoggingFailures';
-import A10SSRF from './components/A10SSRF';
 import Navigation from './components/Navigation';
+
+// Web Top 10 (2025) — pages and their order/metadata come from a single registry
+import { webTop10 } from './components/web/webTop10';
 
 // Import LLM Top 10 components
 import LLMHomePage from './components/llm/LLMHomePage';
@@ -75,18 +68,19 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
 
-          {/* Web Top 10 Routes */}
+          {/* Web Top 10 (2025) Routes — derived from the registry, in rank order.
+              Each page receives its own metadata and the next entry for the Next button. */}
           <Route path="/web" element={<WebHomePage />} />
-          <Route path="/web/a01" element={<A01BrokenAccessControl />} />
-          <Route path="/web/a02" element={<A02CryptographicFailures />} />
-          <Route path="/web/a03" element={<A03Injection />} />
-          <Route path="/web/a04" element={<A04InsecureDesign />} />
-          <Route path="/web/a05" element={<A05SecurityMisconfiguration />} />
-          <Route path="/web/a06" element={<A06VulnerableComponents />} />
-          <Route path="/web/a07" element={<A07AuthenticationFailures />} />
-          <Route path="/web/a08" element={<A08IntegrityFailures />} />
-          <Route path="/web/a09" element={<A09LoggingFailures />} />
-          <Route path="/web/a10" element={<A10SSRF />} />
+          {webTop10.map((vuln, index) => {
+            const PageComponent = vuln.Component;
+            return (
+              <Route
+                key={vuln.code}
+                path={vuln.path}
+                element={<PageComponent meta={vuln} next={webTop10[index + 1]} />}
+              />
+            );
+          })}
 
           {/* LLM Top 10 Routes */}
           <Route path="/llm" element={<LLMHomePage />} />

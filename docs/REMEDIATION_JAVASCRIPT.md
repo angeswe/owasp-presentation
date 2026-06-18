@@ -2,6 +2,10 @@
 
 This document provides secure coding examples to fix the vulnerabilities demonstrated in the application.
 
+> Section numbering follows the **OWASP Top 10:2025**. SSRF guidance now lives
+> under A01 (Broken Access Control); A03 is **Software Supply Chain Failures**.
+> This is a partial guide — it currently covers A01–A08 (A09 and A10 are TODO).
+
 ## A01 - Broken Access Control
 
 ### ❌ Vulnerable Code
@@ -103,7 +107,309 @@ const checkResourceAccess = async (req, res, next) => {
 };
 ```
 
-## A02 - Cryptographic Failures
+## A02 - Security Misconfiguration
+
+### ❌ Vulnerable Code
+```javascript
+// Exposed debug information
+app.use((err, req, res, next) => {
+  res.status(500).json({
+    error: err.message,
+    stack: err.stack,
+    environment: process.env
+  });
+});
+
+// Missing security headers
+app.use(cors({ origin: '*' }));
+```
+
+### ✅ Secure Implementation
+```javascript
+const helmet = require('helmet');
+const compression = require('compression');
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Secure CORS configuration
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Request compression with security considerations
+app.use(compression({
+  level: 6,
+  threshold: 1024,
+  filter: (req, res) => {
+    // Don't compress responses that might contain secrets
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+// Secure session configuration
+const session = require('express-session');
+const RedisStore = require('connect-redis')(session);
+
+app.use(session({
+  store: new RedisStore({
+    client: redisClient,
+    prefix: 'sess:'
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  name: 'sessionId', // Don't use default name
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true, // Prevent XSS
+    maxAge: 30 * 60 * 1000, // 30 minutes
+    sameSite: 'strict' // CSRF protection
+  }
+}));
+
+// Environment-specific error handling
+const errorHandler = (err, req, res, next) => {
+  // Log error for debugging
+  logger.error({
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+
+  // Generic error response for production
+  if (process.env.NODE_ENV === 'production') {
+    res.status(500).json({
+      error: 'Internal server error',
+      timestamp: new Date().toISOString(),
+      requestId: req.id
+    });
+  } else {
+    // Detailed errors for development only
+    res.status(500).json({
+      error: err.message,
+      stack: err.stack,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
+// Security middleware
+const securityMiddleware = (req, res, next) => {
+  // Remove sensitive headers
+  res.removeHeader('X-Powered-By');
+  res.removeHeader('Server');
+
+  // Add security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  next();
+};
+
+app.use(securityMiddleware);
+
+// Configuration validation
+const validateConfiguration = () => {
+  const requiredConfig = [
+    'NODE_ENV',
+    'JWT_SECRET',
+    'DATABASE_URL',
+    'SESSION_SECRET',
+    'REDIS_URL'
+  ];
+
+  const missing = requiredConfig.filter(key => !process.env[key]);
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required configuration: ${missing.join(', ')}`);
+  }
+
+  // Validate secret lengths
+  if (process.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters');
+  }
+};
+
+// Initialize app with security checks
+const initializeApp = () => {
+  validateConfiguration();
+
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Starting in production mode');
+
+    // Additional production security
+    app.disable('x-powered-by');
+    app.set('trust proxy', 1);
+  }
+};
+```
+
+## A03 - Software Supply Chain Failures
+
+### ❌ Vulnerable Code
+```javascript
+// Using outdated packages with known vulnerabilities
+const express = require('express'); // Old version
+const lodash = require('lodash'); // Vulnerable to prototype pollution
+const moment = require('moment'); // Deprecated
+```
+
+### ✅ Secure Implementation
+```javascript
+// Updated package.json with security-focused packages
+{
+  "dependencies": {
+    "express": "^5.0.0",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.0.0",
+    "express-validator": "^7.0.0",
+    "bcrypt": "^5.1.0",
+    "jsonwebtoken": "^9.0.0",
+    "node-cache": "^5.1.2"
+  },
+  "scripts": {
+    "audit": "npm audit",
+    "audit-fix": "npm audit fix",
+    "update-check": "npx npm-check-updates",
+    "security-scan": "npx audit-ci --moderate"
+  }
+}
+
+// Dependency management utilities
+const fs = require('fs');
+const path = require('path');
+
+// Check for known vulnerabilities
+const checkDependencySecurity = () => {
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  const vulnerablePackages = [
+    'lodash@<4.17.21', // Prototype pollution
+    'moment@*', // Deprecated
+    'request@*', // Deprecated
+    'node-uuid@<1.4.8' // Cryptographically insecure
+  ];
+
+  console.log('Checking for vulnerable dependencies...');
+  // Implementation would check against vulnerability database
+};
+
+// Secure utility functions without vulnerable dependencies
+const safeObjectMerge = (target, ...sources) => {
+  // Safe alternative to lodash merge
+  for (const source of sources) {
+    for (const key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+          continue; // Skip dangerous keys
+        }
+        target[key] = source[key];
+      }
+    }
+  }
+  return target;
+};
+
+// Modern date handling (alternative to moment)
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short'
+  }).format(new Date(date));
+};
+
+// Automated security scanning
+const runSecurityScan = async () => {
+  const { exec } = require('child_process');
+
+  return new Promise((resolve, reject) => {
+    exec('npm audit --json', (error, stdout, stderr) => {
+      if (error && error.code !== 1) { // Code 1 means vulnerabilities found
+        return reject(error);
+      }
+
+      try {
+        const auditResult = JSON.parse(stdout);
+        const vulnerabilities = auditResult.vulnerabilities || {};
+
+        const highSeverity = Object.values(vulnerabilities)
+          .filter(vuln => vuln.severity === 'high' || vuln.severity === 'critical');
+
+        if (highSeverity.length > 0) {
+          console.warn(`Found ${highSeverity.length} high/critical vulnerabilities`);
+          // Log details or fail build in CI/CD
+        }
+
+        resolve(auditResult);
+      } catch (parseError) {
+        reject(parseError);
+      }
+    });
+  });
+};
+
+// Content Security Policy for preventing malicious scripts
+const cspConfig = {
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: [
+      "'self'",
+      // Only allow scripts from trusted CDNs with SRI
+      "https://cdn.jsdelivr.net",
+      "https://cdnjs.cloudflare.com"
+    ],
+    styleSrc: [
+      "'self'",
+      "'unsafe-inline'", // Only if absolutely necessary
+      "https://fonts.googleapis.com"
+    ],
+    imgSrc: ["'self'", "data:", "https:"],
+    connectSrc: ["'self'"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    objectSrc: ["'none'"],
+    mediaSrc: ["'self'"],
+    frameSrc: ["'none'"],
+    upgradeInsecureRequests: []
+  }
+};
+```
+
+## A04 - Cryptographic Failures
 
 ### ❌ Vulnerable Code
 ```javascript
@@ -203,7 +509,7 @@ const validateEnvironment = () => {
 };
 ```
 
-## A03 - Injection
+## A05 - Injection
 
 ### ❌ Vulnerable Code
 ```javascript
@@ -330,7 +636,7 @@ const SafeStringType = new GraphQLScalarType({
 });
 ```
 
-## A04 - Insecure Design
+## A06 - Insecure Design
 
 ### ❌ Vulnerable Code
 ```javascript
@@ -545,309 +851,7 @@ const upload = multer({
 });
 ```
 
-## A05 - Security Misconfiguration
-
-### ❌ Vulnerable Code
-```javascript
-// Exposed debug information
-app.use((err, req, res, next) => {
-  res.status(500).json({
-    error: err.message,
-    stack: err.stack,
-    environment: process.env
-  });
-});
-
-// Missing security headers
-app.use(cors({ origin: '*' }));
-```
-
-### ✅ Secure Implementation
-```javascript
-const helmet = require('helmet');
-const compression = require('compression');
-
-// Security headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"]
-    }
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
-
-// Secure CORS configuration
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-// Request compression with security considerations
-app.use(compression({
-  level: 6,
-  threshold: 1024,
-  filter: (req, res) => {
-    // Don't compress responses that might contain secrets
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  }
-}));
-
-// Secure session configuration
-const session = require('express-session');
-const RedisStore = require('connect-redis')(session);
-
-app.use(session({
-  store: new RedisStore({
-    client: redisClient,
-    prefix: 'sess:'
-  }),
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  name: 'sessionId', // Don't use default name
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    httpOnly: true, // Prevent XSS
-    maxAge: 30 * 60 * 1000, // 30 minutes
-    sameSite: 'strict' // CSRF protection
-  }
-}));
-
-// Environment-specific error handling
-const errorHandler = (err, req, res, next) => {
-  // Log error for debugging
-  logger.error({
-    error: err.message,
-    stack: err.stack,
-    url: req.url,
-    method: req.method,
-    ip: req.ip,
-    userAgent: req.get('User-Agent')
-  });
-
-  // Generic error response for production
-  if (process.env.NODE_ENV === 'production') {
-    res.status(500).json({
-      error: 'Internal server error',
-      timestamp: new Date().toISOString(),
-      requestId: req.id
-    });
-  } else {
-    // Detailed errors for development only
-    res.status(500).json({
-      error: err.message,
-      stack: err.stack,
-      timestamp: new Date().toISOString()
-    });
-  }
-};
-
-// Security middleware
-const securityMiddleware = (req, res, next) => {
-  // Remove sensitive headers
-  res.removeHeader('X-Powered-By');
-  res.removeHeader('Server');
-
-  // Add security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-  next();
-};
-
-app.use(securityMiddleware);
-
-// Configuration validation
-const validateConfiguration = () => {
-  const requiredConfig = [
-    'NODE_ENV',
-    'JWT_SECRET',
-    'DATABASE_URL',
-    'SESSION_SECRET',
-    'REDIS_URL'
-  ];
-
-  const missing = requiredConfig.filter(key => !process.env[key]);
-
-  if (missing.length > 0) {
-    throw new Error(`Missing required configuration: ${missing.join(', ')}`);
-  }
-
-  // Validate secret lengths
-  if (process.env.JWT_SECRET.length < 32) {
-    throw new Error('JWT_SECRET must be at least 32 characters');
-  }
-};
-
-// Initialize app with security checks
-const initializeApp = () => {
-  validateConfiguration();
-
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Starting in production mode');
-
-    // Additional production security
-    app.disable('x-powered-by');
-    app.set('trust proxy', 1);
-  }
-};
-```
-
-## A06 - Vulnerable and Outdated Components
-
-### ❌ Vulnerable Code
-```javascript
-// Using outdated packages with known vulnerabilities
-const express = require('express'); // Old version
-const lodash = require('lodash'); // Vulnerable to prototype pollution
-const moment = require('moment'); // Deprecated
-```
-
-### ✅ Secure Implementation
-```javascript
-// Updated package.json with security-focused packages
-{
-  "dependencies": {
-    "express": "^5.0.0",
-    "helmet": "^7.0.0",
-    "express-rate-limit": "^6.0.0",
-    "express-validator": "^7.0.0",
-    "bcrypt": "^5.1.0",
-    "jsonwebtoken": "^9.0.0",
-    "node-cache": "^5.1.2"
-  },
-  "scripts": {
-    "audit": "npm audit",
-    "audit-fix": "npm audit fix",
-    "update-check": "npx npm-check-updates",
-    "security-scan": "npx audit-ci --moderate"
-  }
-}
-
-// Dependency management utilities
-const fs = require('fs');
-const path = require('path');
-
-// Check for known vulnerabilities
-const checkDependencySecurity = () => {
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-  const vulnerablePackages = [
-    'lodash@<4.17.21', // Prototype pollution
-    'moment@*', // Deprecated
-    'request@*', // Deprecated
-    'node-uuid@<1.4.8' // Cryptographically insecure
-  ];
-
-  console.log('Checking for vulnerable dependencies...');
-  // Implementation would check against vulnerability database
-};
-
-// Secure utility functions without vulnerable dependencies
-const safeObjectMerge = (target, ...sources) => {
-  // Safe alternative to lodash merge
-  for (const source of sources) {
-    for (const key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-          continue; // Skip dangerous keys
-        }
-        target[key] = source[key];
-      }
-    }
-  }
-  return target;
-};
-
-// Modern date handling (alternative to moment)
-const formatDate = (date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZoneName: 'short'
-  }).format(new Date(date));
-};
-
-// Automated security scanning
-const runSecurityScan = async () => {
-  const { exec } = require('child_process');
-
-  return new Promise((resolve, reject) => {
-    exec('npm audit --json', (error, stdout, stderr) => {
-      if (error && error.code !== 1) { // Code 1 means vulnerabilities found
-        return reject(error);
-      }
-
-      try {
-        const auditResult = JSON.parse(stdout);
-        const vulnerabilities = auditResult.vulnerabilities || {};
-
-        const highSeverity = Object.values(vulnerabilities)
-          .filter(vuln => vuln.severity === 'high' || vuln.severity === 'critical');
-
-        if (highSeverity.length > 0) {
-          console.warn(`Found ${highSeverity.length} high/critical vulnerabilities`);
-          // Log details or fail build in CI/CD
-        }
-
-        resolve(auditResult);
-      } catch (parseError) {
-        reject(parseError);
-      }
-    });
-  });
-};
-
-// Content Security Policy for preventing malicious scripts
-const cspConfig = {
-  directives: {
-    defaultSrc: ["'self'"],
-    scriptSrc: [
-      "'self'",
-      // Only allow scripts from trusted CDNs with SRI
-      "https://cdn.jsdelivr.net",
-      "https://cdnjs.cloudflare.com"
-    ],
-    styleSrc: [
-      "'self'",
-      "'unsafe-inline'", // Only if absolutely necessary
-      "https://fonts.googleapis.com"
-    ],
-    imgSrc: ["'self'", "data:", "https:"],
-    connectSrc: ["'self'"],
-    fontSrc: ["'self'", "https://fonts.gstatic.com"],
-    objectSrc: ["'none'"],
-    mediaSrc: ["'self'"],
-    frameSrc: ["'none'"],
-    upgradeInsecureRequests: []
-  }
-};
-```
-
-## A07 - Identification and Authentication Failures
+## A07 - Authentication Failures
 
 ### ❌ Vulnerable Code
 ```javascript
@@ -1140,7 +1144,7 @@ const initiatePasswordReset = async (email) => {
 };
 ```
 
-## A08 - Software and Data Integrity Failures
+## A08 - Software or Data Integrity Failures
 
 ### ❌ Vulnerable Code
 ```javascript

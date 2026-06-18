@@ -22,7 +22,7 @@ This application contains **intentional security vulnerabilities** for education
 
 ## Overview
 
-This is an interactive demonstration of the **OWASP Top 10 (2021)** web application vulnerabilities and the **OWASP Top 10 for LLM Applications (2025)**. It includes:
+This is an interactive demonstration of the **OWASP Top 10 (2025)** web application vulnerabilities and the **OWASP Top 10 for LLM Applications (2025)**. It includes:
 
 - **Frontend**: React TypeScript application with navigation through all 20 vulnerabilities
 - **Backend**: Node.js Express API with intentionally vulnerable endpoints
@@ -49,57 +49,62 @@ owasp-dangers/
 └── docs/              # Documentation and presentation materials
 ```
 
-## OWASP Top 10 (2021) Coverage
+## OWASP Top 10 (2025) Coverage
+
+> Updated to the OWASP Top 10:2025. Versus 2021: Security Misconfiguration rose
+> to #2; **Software Supply Chain Failures** (#3) is new and absorbs the old
+> "Vulnerable & Outdated Components"; **Mishandling of Exceptional Conditions**
+> (#10) is new; and SSRF was merged into Broken Access Control (#1).
 
 1. **A01 - Broken Access Control**
    - Direct object references
-   - Missing authorization
-   - Privilege escalation
+   - Missing authorization / privilege escalation
+   - Server-Side Request Forgery (SSRF) — *merged into A01 in 2025*
 
-2. **A02 - Cryptographic Failures**
-   - Plain text passwords
-   - Weak encryption algorithms
-   - Hardcoded secrets
-
-3. **A03 - Injection**
-   - SQL injection
-   - Command injection
-   - NoSQL injection
-
-4. **A04 - Insecure Design**
-   - Missing security controls
-   - Business logic flaws
-   - Unlimited resource consumption
-
-5. **A05 - Security Misconfiguration**
+2. **A02 - Security Misconfiguration**
    - Default credentials
    - Debug information exposure
    - Unnecessary features
 
-6. **A06 - Vulnerable and Outdated Components**
-   - Outdated dependencies
-   - Known vulnerabilities
-   - Deprecated methods
+3. **A03 - Software Supply Chain Failures** *(new in 2025)*
+   - Vulnerable & outdated components
+   - Dependency confusion
+   - Unsigned artifacts & malicious install scripts
 
-7. **A07 - Identification and Authentication Failures**
+4. **A04 - Cryptographic Failures**
+   - Plain text passwords
+   - Weak encryption algorithms
+   - Hardcoded secrets
+
+5. **A05 - Injection**
+   - SQL injection
+   - Command injection
+   - NoSQL injection
+
+6. **A06 - Insecure Design**
+   - Missing security controls
+   - Business logic flaws
+   - Unlimited resource consumption
+
+7. **A07 - Authentication Failures**
    - Weak passwords
    - Session hijacking
    - Brute force vulnerabilities
 
-8. **A08 - Software and Data Integrity Failures**
+8. **A08 - Software or Data Integrity Failures**
    - Unsigned updates
    - Insecure deserialization
    - CI/CD vulnerabilities
 
-9. **A09 - Security Logging and Monitoring Failures**
+9. **A09 - Security Logging and Alerting Failures**
    - Missing audit logs
-   - Insufficient monitoring
+   - Insufficient alerting
    - No anomaly detection
 
-10. **A10 - Server-Side Request Forgery (SSRF)**
-    - Internal network access
-    - Cloud metadata exposure
-    - Port scanning
+10. **A10 - Mishandling of Exceptional Conditions** *(new in 2025)*
+    - Verbose error / stack-trace leakage
+    - Leaked database errors (schema disclosure)
+    - Fail-open on exception
 
 ## OWASP Top 10 for LLM Applications (2025) Coverage
 
@@ -290,17 +295,20 @@ The application is designed for step-by-step presentations:
 - `GET /health` - Server status
 
 ### Vulnerability Endpoints
+
+Mounted by slug (not rank), so a future reshuffle never changes a URL:
+
 - `GET /api` - API overview
-- `/api/a01/*` - Broken Access Control demos
-- `/api/a02/*` - Cryptographic Failures demos
-- `/api/a03/*` - Injection demos
-- `/api/a04/*` - Insecure Design demos
-- `/api/a05/*` - Security Misconfiguration demos
-- `/api/a06/*` - Vulnerable Components demos
-- `/api/a07/*` - Authentication Failures demos
-- `/api/a08/*` - Integrity Failures demos
-- `/api/a09/*` - Logging Failures demos
-- `/api/a10/*` - SSRF demos
+- `/api/broken-access-control/*` - Broken Access Control demos (incl. SSRF at `/ssrf/*`)
+- `/api/security-misconfiguration/*` - Security Misconfiguration demos
+- `/api/software-supply-chain-failures/*` - Software Supply Chain Failures demos
+- `/api/cryptographic-failures/*` - Cryptographic Failures demos
+- `/api/injection/*` - Injection demos
+- `/api/insecure-design/*` - Insecure Design demos
+- `/api/authentication-failures/*` - Authentication Failures demos
+- `/api/data-integrity-failures/*` - Software or Data Integrity Failures demos
+- `/api/security-logging-alerting-failures/*` - Security Logging & Alerting Failures demos
+- `/api/mishandling-exceptional-conditions/*` - Mishandling of Exceptional Conditions demos
 
 ### LLM Vulnerability Endpoints
 - `/api/llm01/*` - Prompt Injection demos (SSE streaming)
@@ -350,28 +358,36 @@ backend/src/
 │   ├── database.ts    # Database initialization
 │   ├── User.ts        # User model (vulnerable)
 │   └── Post.ts        # Post model (vulnerable)
-└── routes/
-    ├── a01-broken-access-control.ts
-    ├── a02-cryptographic-failures.ts
-    └── ... (A03-A10)
+└── routes/           # named by slug, not rank
+    ├── broken-access-control.ts        # A01 (mounts server-side-request-forgery.ts at /ssrf)
+    ├── security-misconfiguration.ts    # A02
+    ├── software-supply-chain-failures.ts  # A03
+    └── ... (one file per vulnerability, mounted in 2025 order by index.ts)
 
 frontend/src/
-├── App.tsx            # Main application
+├── App.tsx            # Main application (routes derived from the registry)
 ├── components/
-│   ├── HomePage.tsx   # Landing page
-│   ├── Navigation.tsx # Navigation component
-│   ├── A01BrokenAccessControl.tsx
-│   └── ... (A02-A10)
+│   ├── LandingPage.tsx   # Landing page
+│   ├── Navigation.tsx    # Web nav (derived from the registry)
+│   ├── WebHomePage.tsx   # Web home grid (derived from the registry)
+│   └── web/
+│       ├── webTop10.ts            # single source of truth: rank/order/title/route/apiBase
+│       ├── types.ts               # WebVuln / WebVulnProps
+│       ├── BrokenAccessControl.tsx
+│       └── ... (one file per vulnerability, named by slug not rank)
 └── ...
 ```
 
-### Adding New Vulnerabilities
+### Adding or Re-ranking Web Vulnerabilities
 
-1. Create new route in `backend/src/routes/`
-2. Add route to `backend/src/index.ts`
-3. Create corresponding React component
-4. Add component to App.tsx routing
-5. Update navigation in Navigation.tsx
+The Web track is registry-driven, so updates are localized:
+
+1. Create a slug-named route in `backend/src/routes/` and mount it in `backend/src/index.ts`
+2. Create a slug-named React component in `frontend/src/components/web/` (props: `WebVulnProps`)
+3. Add (or reorder) the entry in `frontend/src/components/web/webTop10.ts`
+
+App routing, the Navigation, the home grid and every "Next" button all derive
+from that registry — there is nothing else to edit for a re-rank.
 
 ### Code Standards
 
@@ -410,7 +426,7 @@ frontend/src/
 
 ### OWASP References
 
-- [OWASP Top 10 2021](https://owasp.org/Top10/)
+- [OWASP Top 10 2025](https://owasp.org/Top10/2025/)
 - [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
 - [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)
 - [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/)

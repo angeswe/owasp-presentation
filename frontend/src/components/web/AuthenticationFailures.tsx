@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "./VulnerabilityPage.css";
+import "../VulnerabilityPage.css";
+import { WebVulnProps } from "./types";
 
-const A07AuthenticationFailures: React.FC = () => {
+const AuthenticationFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [username, setUsername] = useState("user");
   const [password, setPassword] = useState("wrong-password");
   const [jwtUsername, setJwtUsername] = useState("admin");
@@ -17,7 +18,7 @@ const A07AuthenticationFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a07/brute-force-login",
+        `${meta.apiBase}/brute-force-login`,
         {
           username,
           password,
@@ -33,7 +34,7 @@ const A07AuthenticationFailures: React.FC = () => {
   const handleJwtLogin = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:3001/api/a07/jwt-login", {
+      const res = await axios.post(`${meta.apiBase}/jwt-login`, {
         username: jwtUsername,
         password: jwtPassword,
       });
@@ -48,7 +49,7 @@ const A07AuthenticationFailures: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/a07/forgot-password",
+        `${meta.apiBase}/forgot-password`,
         {
           username: recoveryUsername,
         }
@@ -63,8 +64,8 @@ const A07AuthenticationFailures: React.FC = () => {
   return (
     <div className="vulnerability-page">
       <div className="vuln-header">
-        <h1>A07 - Identification and Authentication Failures</h1>
-        <div className="vulnerability-badge">OWASP #7</div>
+        <h1>{meta.code} - {meta.title}</h1>
+        <div className="vulnerability-badge">OWASP #{meta.rank}</div>
       </div>
       <div className="vuln-description">
         <p>
@@ -387,12 +388,14 @@ public class TokenService : ITokenService
       </div>
 
       <div className="navigation-section">
-        <Link to="/web/a08" className="next-button">
-          Next: A08 - Integrity Failures →
-        </Link>
+        {next && (
+          <Link to={next.path} className="next-button">
+            Next: {next.code} - {next.title} &rarr;
+          </Link>
+        )}
       </div>
     </div>
   );
 };
 
-export default A07AuthenticationFailures;
+export default AuthenticationFailures;

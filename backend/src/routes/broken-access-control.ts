@@ -1,11 +1,17 @@
 import express from 'express';
 import { UserModel } from '../models/User';
 import { PostModel } from '../models/Post';
+import ssrfRouter from './server-side-request-forgery';
 
 const router = express.Router();
 
 // VULNERABILITY A01: Broken Access Control
-// This route demonstrates various access control failures
+// This route demonstrates various access control failures.
+//
+// OWASP Top 10:2025 folded Server-Side Request Forgery (the former A10) into
+// Broken Access Control, so the SSRF demos are mounted here under /ssrf
+// (e.g. POST /api/broken-access-control/ssrf/fetch-url).
+router.use('/ssrf', ssrfRouter);
 
 // VULNERABILITY: Direct object reference without authorization
 router.get('/user/:id', async (req, res) => {

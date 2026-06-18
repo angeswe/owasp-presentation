@@ -26,27 +26,56 @@
 2. **OWASP Overview**
    - What is OWASP
    - Top 10 methodology
-   - 2021 updates
+   - 2025 updates: Security Misconfiguration up to #2; new **Software Supply
+     Chain Failures** (#3) and **Mishandling of Exceptional Conditions** (#10);
+     SSRF merged into Broken Access Control (#1)
 
 ### Core Demonstrations (60 minutes - 6 min per vulnerability)
 
 #### A01 - Broken Access Control (6 min)
 **Demo Script:**
-1. Navigate to `/a01`
+1. Navigate to `/web/a01`
 2. Show direct object reference demo
    - Try user ID 1 (admin data exposed)
    - Try user ID 2 (regular user)
    - Explain authorization bypass
-3. Demo admin panel access
+3. Demo admin panel access + privilege escalation
    - Show unrestricted admin functions
-4. **Key Points:**
+4. **SSRF (merged into A01 for 2025)** — Demos 4 & 5
+   - Fetch an internal URL the server shouldn't reach
+   - Port-scan localhost from the server's vantage point
+5. **Key Points:**
    - Most common vulnerability
    - Leads to data breaches
    - Authorization vs authentication
+   - SSRF is now an access-control failure at the network layer
 
-#### A02 - Cryptographic Failures (6 min)
+#### A02 - Security Misconfiguration (6 min)
 **Demo Script:**
-1. Navigate to `/a02`
+1. Navigate to `/web/a02`
+2. Show debug endpoint exposure
+3. Demonstrate default credentials
+4. **Key Points:**
+   - Configuration management (now #2, up from #5 in 2021)
+   - Default settings dangers
+   - Security hardening
+
+#### A03 - Software Supply Chain Failures (6 min) — *new in 2025*
+**Demo Script:**
+1. Navigate to `/web/a03`
+2. Scan for outdated/vulnerable dependencies and unpatched CVEs
+3. **Dependency confusion** — public package shadows the internal one
+4. **Unsigned artifact** — deploy a tarball with no checksum/signature
+5. **Malicious postinstall** — show what an install script would harvest
+6. **Key Points:**
+   - Broadens the old "Vulnerable & Outdated Components"
+   - The whole chain is in scope: deps, build systems, distribution
+   - Defences: SBOM, pinned/integrity-checked installs, scoped registries,
+     signed artifacts (SLSA/sigstore)
+
+#### A04 - Cryptographic Failures (6 min)
+**Demo Script:**
+1. Navigate to `/web/a04`
 2. Show weak encryption demo
    - DES algorithm exposure
    - Key exposure in response
@@ -56,9 +85,9 @@
    - Encryption vs encoding
    - Key management importance
 
-#### A03 - Injection (6 min)
+#### A05 - Injection (6 min)
 **Demo Script:**
-1. Navigate to `/a03`
+1. Navigate to `/web/a05`
 2. SQL injection demonstration
    - Try: `' OR 1=1--`
    - Show data extraction
@@ -68,37 +97,18 @@
    - Parameterized queries
    - Multiple injection types
 
-#### A04 - Insecure Design (6 min)
+#### A06 - Insecure Design (6 min)
 **Demo Script:**
-1. Navigate to `/a04`
+1. Navigate to `/web/a06`
 2. Show business logic flaws
 3. **Key Points:**
    - Design vs implementation
    - Threat modeling importance
    - Security by design
 
-#### A05 - Security Misconfiguration (6 min)
-**Demo Script:**
-1. Navigate to `/a05`
-2. Show debug endpoint exposure
-3. Demonstrate default credentials
-4. **Key Points:**
-   - Configuration management
-   - Default settings dangers
-   - Security hardening
-
-#### A06 - Vulnerable Components (6 min)
-**Demo Script:**
-1. Navigate to `/a06`
-2. Show outdated dependencies
-3. **Key Points:**
-   - Supply chain security
-   - Dependency management
-   - CVE monitoring
-
 #### A07 - Authentication Failures (6 min)
 **Demo Script:**
-1. Navigate to `/a07`
+1. Navigate to `/web/a07`
 2. Show weak password demo
 3. Demonstrate session issues
 4. **Key Points:**
@@ -106,33 +116,37 @@
    - Session management
    - MFA importance
 
-#### A08 - Integrity Failures (6 min)
+#### A08 - Software or Data Integrity Failures (6 min)
 **Demo Script:**
-1. Navigate to `/a08`
-2. Show unsigned upload demo
+1. Navigate to `/web/a08`
+2. Show unsigned upload / insecure deserialization demo
 3. **Key Points:**
-   - Supply chain attacks
+   - Integrity of code and data
    - Code signing importance
    - CI/CD security
 
-#### A09 - Logging Failures (6 min)
+#### A09 - Security Logging and Alerting Failures (6 min)
 **Demo Script:**
-1. Navigate to `/a09`
+1. Navigate to `/web/a09`
 2. Show missing logging
 3. Demonstrate exposed logs
 4. **Key Points:**
    - Incident response
-   - Monitoring importance
+   - Alerting importance (renamed from "Monitoring" in 2025)
    - Log security
 
-#### A10 - SSRF (6 min)
+#### A10 - Mishandling of Exceptional Conditions (6 min) — *new in 2025*
 **Demo Script:**
-1. Navigate to `/a10`
-2. Show internal network access
-3. **Key Points:**
-   - Network segmentation
-   - URL validation
-   - Cloud metadata risks
+1. Navigate to `/web/a10`
+2. Trigger the divide-by-zero error — show the leaked stack trace, source
+   path and runtime version returned to the client
+3. Run the vulnerable lookup — show the leaked SQL exposing `password_hash`
+   and `api_key`; then click the **secure** button to show the opaque,
+   reference-id response for the same failure
+4. **Key Points:**
+   - Errors must be logged server-side, never returned to the client
+   - Fail closed, not open (an exception in a check must deny)
+   - Verbose errors hand attackers a free map of the internals
 
 ### Conclusion (10 minutes)
 1. **Key Takeaways**

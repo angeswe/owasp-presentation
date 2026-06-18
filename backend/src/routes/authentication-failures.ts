@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
     const userId = await UserModel.create({ username, password, email, api_key: 'key-' + Date.now() });
 
     res.json({
-      vulnerability: 'A07 - Identification and Authentication Failures',
+      vulnerability: 'A07 - Authentication Failures',
       description: 'Weak password policy',
       user_id: userId,
       password: password, // VULNERABLE: Returning password
@@ -41,7 +41,7 @@ router.post('/login-session', async (req, res) => {
       const sessionToken = `${user.id}_${Date.now()}`;
 
       res.json({
-        vulnerability: 'A07 - Identification and Authentication Failures',
+        vulnerability: 'A07 - Authentication Failures',
         description: 'Predictable session tokens',
         session_token: sessionToken,
         user_id: user.id,
@@ -70,7 +70,7 @@ router.post('/jwt-login', async (req, res) => {
       );
 
       res.json({
-        vulnerability: 'A07 - Identification and Authentication Failures',
+        vulnerability: 'A07 - Authentication Failures',
         description: 'Weak JWT implementation',
         jwt_token: token,
         secret: 'weak-secret', // VULNERABLE: Exposing secret
@@ -96,7 +96,7 @@ router.post('/brute-force-login', async (req, res) => {
   if (user) {
     loginAttempts[username] = { count: 0, lastAttempt: Date.now() };
     res.json({
-      vulnerability: 'A07 - Identification and Authentication Failures',
+      vulnerability: 'A07 - Authentication Failures',
       description: 'No brute force protection',
       message: 'Login successful',
       attempts: loginAttempts[username]?.count || 0
@@ -108,7 +108,7 @@ router.post('/brute-force-login', async (req, res) => {
     loginAttempts[username] = currentAttempts;
 
     res.status(401).json({
-      vulnerability: 'A07 - Identification and Authentication Failures',
+      vulnerability: 'A07 - Authentication Failures',
       error: 'Invalid credentials',
       attempts: currentAttempts.count,
       explanation: 'No account lockout after failed attempts'
@@ -125,7 +125,7 @@ router.post('/forgot-password', async (req, res) => {
     if (user) {
       // VULNERABLE: Returning password in recovery
       res.json({
-        vulnerability: 'A07 - Identification and Authentication Failures',
+        vulnerability: 'A07 - Authentication Failures',
         description: 'Insecure password recovery',
         username: user.username,
         password: user.password, // VULNERABLE: Exposing password

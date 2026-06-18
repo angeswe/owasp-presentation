@@ -2,6 +2,9 @@
 
 This document provides secure coding examples in C# to fix the vulnerabilities demonstrated in the application.
 
+> Section numbering follows the **OWASP Top 10:2025**. This is a partial guide —
+> it currently covers A01, A04, A05 and A06 (the remaining categories are TODO).
+
 ## A01 - Broken Access Control
 
 ### ❌ Vulnerable Code
@@ -221,7 +224,7 @@ public class UpdateRoleRequest
 }
 ```
 
-## A02 - Cryptographic Failures
+## A04 - Cryptographic Failures
 
 ### ❌ Vulnerable Code
 ```csharp
@@ -540,7 +543,7 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
-## A03 - Injection
+## A05 - Injection
 
 ### ❌ Vulnerable Code
 ```csharp
@@ -902,7 +905,7 @@ public class UserSearchRequestValidator : AbstractValidator<UserSearchRequest>
 }
 ```
 
-## A04 - Insecure Design
+## A06 - Insecure Design
 
 ### ❌ Vulnerable Code
 ```csharp

@@ -21,7 +21,7 @@ router.post('/password-reset', async (req, res) => {
       await UserModel.updateUser(user.id, { password: new_password });
 
       res.json({
-        vulnerability: 'A04 - Insecure Design',
+        vulnerability: 'A06 - Insecure Design',
         description: 'Password reset without verification',
         message: `Password updated for ${username}`,
         explanation: 'Anyone can reset any user password without verification'
@@ -45,7 +45,7 @@ router.post('/unlimited-requests', (req, res) => {
   }
 
   res.json({
-    vulnerability: 'A04 - Insecure Design',
+    vulnerability: 'A06 - Insecure Design',
     description: 'No rate limiting or resource constraints',
     processed: result.length,
     explanation: 'This endpoint can consume unlimited server resources'
@@ -61,7 +61,7 @@ router.post('/purchase', (req, res) => {
   const total = price * quantity;
 
   res.json({
-    vulnerability: 'A04 - Insecure Design',
+    vulnerability: 'A06 - Insecure Design',
     description: 'Business logic bypass in purchase flow',
     item_id,
     quantity,

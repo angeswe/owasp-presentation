@@ -16,11 +16,11 @@ const LandingPage: React.FC = () => {
 
       <div className="landing-cards">
         <Link to="/web" className="landing-card landing-card--web">
-          <span className="landing-card__year">2021</span>
+          <span className="landing-card__year">2025</span>
           <h2>OWASP Web Top 10</h2>
           <p>
             The standard awareness document for web application security — from
-            broken access control to server-side request forgery.
+            broken access control to mishandling of exceptional conditions.
           </p>
           <span className="landing-card__cta">Explore Web Top 10 &rarr;</span>
         </Link>

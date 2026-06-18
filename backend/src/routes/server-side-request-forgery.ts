@@ -18,7 +18,7 @@ router.post('/fetch-url', async (req, res) => {
     const response = await axios.get(url, { timeout: 5000 });
 
     res.json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       description: 'Unvalidated URL fetch',
       url: url,
       status: response.status,
@@ -28,7 +28,7 @@ router.post('/fetch-url', async (req, res) => {
   } catch (error) {
     const err = error as Error;
     res.status(500).json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       error: 'Request failed',
       url: url,
       message: err.message,
@@ -53,7 +53,7 @@ router.post('/process-image', async (req, res) => {
     });
 
     res.json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       description: 'SSRF via image processing',
       image_url: image_url,
       content_type: response.headers['content-type'],
@@ -63,7 +63,7 @@ router.post('/process-image', async (req, res) => {
   } catch (error) {
     const err = error as Error;
     res.status(500).json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       error: 'Image processing failed',
       url: image_url,
       message: err.message
@@ -90,7 +90,7 @@ router.post('/webhook', async (req, res) => {
     });
 
     res.json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       description: 'SSRF via webhook callback',
       callback_url: callback_url,
       response_status: response.status,
@@ -99,7 +99,7 @@ router.post('/webhook', async (req, res) => {
   } catch (error) {
     const err = error as Error;
     res.status(500).json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       error: 'Webhook failed',
       callback_url: callback_url,
       message: err.message
@@ -124,7 +124,7 @@ router.get('/check-service', async (req, res) => {
     });
 
     res.json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       description: 'Internal network reconnaissance',
       host: host,
       port: port || 80,
@@ -134,7 +134,7 @@ router.get('/check-service', async (req, res) => {
     });
   } catch (error) {
     res.json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       description: 'Internal network reconnaissance',
       host: host,
       port: port || 80,
@@ -153,7 +153,7 @@ router.get('/metadata', async (req, res) => {
     const response = await axios.get(metadataUrl, { timeout: 2000 });
 
     res.json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       description: 'Cloud metadata access',
       metadata_url: metadataUrl,
       data: response.data,
@@ -161,7 +161,7 @@ router.get('/metadata', async (req, res) => {
     });
   } catch (error) {
     res.json({
-      vulnerability: 'A10 - Server-Side Request Forgery (SSRF)',
+      vulnerability: 'A01 - Broken Access Control · SSRF',
       description: 'Cloud metadata access attempt',
       note: 'Metadata service not accessible (not running on cloud)',
       explanation: 'In cloud environments, this could expose instance credentials'
