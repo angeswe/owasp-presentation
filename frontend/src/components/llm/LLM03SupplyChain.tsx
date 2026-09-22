@@ -1,51 +1,45 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
 import axios from "axios";
-import "../VulnerabilityPage.css";
+import { LLMVulnProps } from "./types";
+import { DemoTopBar, LLMNextNav, LLMPageHeader, PresetChips, WhyItWorked } from "./LLMDemoParts";
 
-const API_BASE = "http://localhost:3001/api";
+interface SupplyPreset {
+  label: string;
+  kind: "model" | "plugin";
+  name: string;
+}
 
-const LLM03SupplyChain: React.FC = () => {
-  const [registry, setRegistry] = useState<any>(null);
-  const [selectedModel, setSelectedModel] = useState("");
-  const [selectedPlugin, setSelectedPlugin] = useState("");
-  const [response, setResponse] = useState<any>(null);
+const PRESETS: SupplyPreset[] = [
+  { label: "gpt-helper-v2 (signed)", kind: "model", name: "gpt-helper-v2" },
+  { label: "finance-llm-pro", kind: "model", name: "finance-llm-pro" },
+  { label: "medical-assistant-v3", kind: "model", name: "medical-assistant-v3" },
+  { label: "Install plugin: data-export-helper", kind: "plugin", name: "data-export-helper" },
+];
+
+const LLM03SupplyChain: React.FC<LLMVulnProps> = ({ meta, next }) => {
+  const [modelName, setModelName] = useState("");
+  const [secure, setSecure] = useState(false);
+  const [response, setResponse] = useState<{ status: number; data: any } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    axios.get(`${API_BASE}/llm03/registry`).then(res => setRegistry(res.data)).catch(() => {});
-  }, []);
-
-  const loadModel = async () => {
-    if (!selectedModel) return;
+  const run = async (kind: "model" | "plugin", name: string) => {
+    if (!name.trim()) return;
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/llm03/load-model`, { modelName: selectedModel });
-      setResponse(res.data);
+      const res =
+        kind === "model"
+          ? await axios.post(`${meta.apiBase}/load-model`, { modelName: name.trim(), secure })
+          : await axios.post(`${meta.apiBase}/install-plugin`, { pluginName: name.trim(), secure });
+      setResponse({ status: res.status, data: res.data });
     } catch (err: any) {
-      setResponse(err.response?.data || { error: err.message });
-    }
-    setLoading(false);
-  };
-
-  const installPlugin = async () => {
-    if (!selectedPlugin) return;
-    setLoading(true);
-    try {
-      const res = await axios.post(`${API_BASE}/llm03/install-plugin`, { pluginName: selectedPlugin });
-      setResponse(res.data);
-    } catch (err: any) {
-      setResponse(err.response?.data || { error: err.message });
+      setResponse({ status: err.response?.status ?? 0, data: err.response?.data || { error: err.message } });
     }
     setLoading(false);
   };
 
   return (
     <div className="vulnerability-page">
-      <div className="vuln-header">
-        <h1>LLM03 - Supply Chain</h1>
-        <div className="vulnerability-badge" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>OWASP LLM #3</div>
-      </div>
+      <LLMPageHeader meta={meta} />
 
       <div className="vuln-description">
         <p>
@@ -56,76 +50,54 @@ const LLM03SupplyChain: React.FC = () => {
       </div>
 
       <div className="demo-section">
-        <h2>Demo 1: Unverified Model Loading</h2>
+        <DemoTopBar title="Demo: Load a Model from a Public Registry" secure={secure} onSecureChange={setSecure} />
         <p>
-          Load models from a registry without checking their integrity, publisher
-          verification, or hash signatures. Some models contain backdoors.
+          The app pulls models and plugins by name from a public hub and puts them into production.
         </p>
+
+        <PresetChips
+          presets={PRESETS}
+          disabled={loading}
+          onPick={(p) => {
+            if (p.kind === "model") setModelName(p.name);
+            run(p.kind, p.name);
+          }}
+        />
 
         <div className="demo-controls">
           <label>
-            Select Model:
-            <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
-              <option value="">-- Choose a model --</option>
-              {registry?.models?.map((m: string) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+            Model name:
+            <input
+              type="text"
+              value={modelName}
+              onChange={(e) => setModelName(e.target.value)}
+              placeholder="e.g. finance-llm-pro"
+              onKeyDown={(e) => e.key === "Enter" && run("model", modelName)}
+            />
           </label>
-          <button onClick={loadModel} disabled={loading || !selectedModel}>
-            Load Model (No Verification)
+          <button onClick={() => run("model", modelName)} disabled={loading || !modelName.trim()}>
+            Load Model
           </button>
-        </div>
-
-        <div className="demo-tips">
-          <h4>Try these models:</h4>
-          <ul>
-            <li><strong>gpt-helper-v2</strong> - Verified model with valid hash</li>
-            <li><strong>finance-llm-pro</strong> - Unverified model with embedded backdoor</li>
-            <li><strong>medical-assistant-v3</strong> - Tampered model with weak MD5 hash</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>Demo 2: Malicious Plugin Installation</h2>
-        <p>
-          Install plugins that request excessive permissions from untrusted sources.
-          Permissions are auto-granted without review.
-        </p>
-
-        <div className="demo-controls">
-          <label>
-            Select Plugin:
-            <select value={selectedPlugin} onChange={(e) => setSelectedPlugin(e.target.value)}>
-              <option value="">-- Choose a plugin --</option>
-              {registry?.plugins?.map((p: string) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </label>
-          <button onClick={installPlugin} disabled={loading || !selectedPlugin}>
-            Install Plugin (Auto-Grant Permissions)
+          <button onClick={() => setResponse(null)} style={{ background: "#6c757d" }}>
+            Clear
           </button>
-        </div>
-
-        <div className="vulnerability-explanation">
-          <h4>Why this is dangerous:</h4>
-          <ul>
-            <li>No signature verification on downloaded models</li>
-            <li>Plugins get all requested permissions automatically</li>
-            <li>Backdoors can remain dormant until specific trigger inputs</li>
-            <li>Weak hash algorithms (MD5) can be spoofed</li>
-          </ul>
         </div>
       </div>
 
       {response && (
         <div className="response-section">
-          <h3>Response:</h3>
-          <pre className="response-box">{JSON.stringify(response, null, 2)}</pre>
+          <h3>Response (HTTP {response.status}):</h3>
+          <pre className="response-box">{JSON.stringify(response.data, null, 2)}</pre>
         </div>
       )}
+
+      <WhyItWorked
+        items={[
+          "The loader trusts the registry name. It never checks the publisher, a signature or a strong hash, so an unsigned model with a hidden backdoor goes straight to production.",
+          "Plugin permissions are granted automatically, including system:execute.",
+          "Secure mode: models and plugins must pass publisher, signature and SHA-256 checks, and plugins may not request system:execute. Failed checks are returned.",
+        ]}
+      />
 
       <div className="remediation-section">
         <h2>How to Fix This</h2>
@@ -163,11 +135,7 @@ const LLM03SupplyChain: React.FC = () => {
         </div>
       </div>
 
-      <div className="navigation-section">
-        <Link to="/llm/l04" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
-          Next: LLM04 - Data and Model Poisoning &rarr;
-        </Link>
-      </div>
+      <LLMNextNav next={next} />
     </div>
   );
 };

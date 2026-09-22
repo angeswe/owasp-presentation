@@ -4,149 +4,140 @@ import { streamResponse } from '../utils/stream';
 const router = express.Router();
 
 // VULNERABILITY LLM10: Unbounded Consumption
-// Simulates endpoints with no rate limiting, size limits, or timeouts
+// Simulates LLM endpoints with no rate limit, token cap or job size limit.
+// With `secure: true`: 5 requests per minute per IP (HTTP 429), maxTokens capped
+// at 1024, input capped at 2,000 tokens and reports capped at 50 pages.
 
-let requestCounts: Record<string, { count: number; firstRequest: number }> = {};
+const SECURE_LIMITS = {
+  requestsPerMinute: 5,
+  maxOutputTokens: 1024,
+  maxInputTokens: 2000,
+  maxReportPages: 50,
+};
+
+let requestCounts: Record<string, number> = {};
+let secureWindows: Record<string, number[]> = {};
 let totalCost = 0;
 
-// VULNERABILITY: No rate limiting
+// Sliding-window rate limit used in secure mode. Returns seconds until retry, or 0.
+function rateLimited(ip: string): number {
+  const now = Date.now();
+  const window = (secureWindows[ip] ?? []).filter(t => now - t < 60_000);
+  if (window.length >= SECURE_LIMITS.requestsPerMinute) {
+    secureWindows[ip] = window;
+    return Math.ceil((60_000 - (now - window[0])) / 1000);
+  }
+  window.push(now);
+  secureWindows[ip] = window;
+  return 0;
+}
+
+function rejectRateLimited(res: express.Response, retryAfter: number) {
+  res.setHeader('Retry-After', String(retryAfter));
+  return res.status(429).json({
+    error: `Rate limit exceeded: ${SECURE_LIMITS.requestsPerMinute} requests per minute. Retry in ${retryAfter}s.`,
+    retryAfterSeconds: retryAfter,
+  });
+}
+
 router.post('/chat', async (req, res) => {
-  const { message, maxTokens } = req.body;
+  const { message, maxTokens, secure } = req.body;
   const clientIp = req.ip || 'unknown';
 
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  // Track requests (but don't limit them - that's the vulnerability)
-  if (!requestCounts[clientIp]) {
-    requestCounts[clientIp] = { count: 0, firstRequest: Date.now() };
+  const isSecure = secure === true;
+  const inputTokens = String(message).split(/\s+/).filter(Boolean).length;
+  const requested = Number(maxTokens) > 0 ? Number(maxTokens) : 4096;
+
+  if (isSecure) {
+    const retryAfter = rateLimited(clientIp);
+    if (retryAfter > 0) return rejectRateLimited(res, retryAfter);
+    if (inputTokens > SECURE_LIMITS.maxInputTokens) {
+      return res.status(413).json({
+        error: `Input too large: ${inputTokens} tokens (limit ${SECURE_LIMITS.maxInputTokens}).`,
+      });
+    }
   }
-  requestCounts[clientIp].count++;
 
-  // VULNERABILITY: No input size limit
-  const inputTokens = message.split(/\s+/).length;
-  const outputTokens = maxTokens || 4096; // Default to max if not specified
+  const outputTokens = isSecure ? Math.min(requested, SECURE_LIMITS.maxOutputTokens) : requested;
+  requestCounts[clientIp] = (requestCounts[clientIp] ?? 0) + 1;
 
-  // Simulate cost calculation
-  const inputCost = (inputTokens / 1000) * 0.01;
-  const outputCost = (outputTokens / 1000) * 0.03;
-  const requestCost = inputCost + outputCost;
+  const requestCost = (inputTokens / 1000) * 0.01 + (outputTokens / 1000) * 0.03;
   totalCost += requestCost;
 
-  const response = `Request processed successfully.\n\n` +
-    `Request Stats:\n` +
-    `- Input tokens: ${inputTokens}\n` +
-    `- Output tokens requested: ${outputTokens}\n` +
-    `- Estimated cost: $${requestCost.toFixed(4)}\n` +
-    `- Total requests from your IP: ${requestCounts[clientIp].count}\n` +
-    `- Total accumulated cost: $${totalCost.toFixed(4)}\n\n` +
-    `Vulnerabilities exploited:\n` +
-    `- No rate limiting (${requestCounts[clientIp].count} requests allowed)\n` +
-    `- No input size limit (${inputTokens} tokens accepted)\n` +
-    `- No max output cap (${outputTokens} tokens requested)\n` +
-    `- No per-user budget enforcement\n` +
-    `- No timeout on long-running requests`;
+  const outputLine = outputTokens < requested
+    ? `${outputTokens.toLocaleString()} (capped from ${requested.toLocaleString()})`
+    : outputTokens.toLocaleString();
+
+  const response = `Request accepted.\n\n` +
+    `Input tokens: ${inputTokens.toLocaleString()}\n` +
+    `Output tokens: ${outputLine}\n` +
+    `Cost of this request: $${requestCost.toFixed(2)}\n` +
+    `Requests from your IP: ${requestCounts[clientIp]}\n` +
+    `Total spend today: $${totalCost.toFixed(2)}`;
 
   await streamResponse(res, response);
 });
 
-// VULNERABILITY: Resource-intensive endpoint with no limits
 router.post('/generate-report', (req, res) => {
-  const { pages, complexity } = req.body;
+  const { pages, secure } = req.body;
+  const clientIp = req.ip || 'unknown';
+  const isSecure = secure === true;
 
-  const numPages = pages || 100;
-  const complexityLevel = complexity || 'maximum';
+  if (isSecure) {
+    const retryAfter = rateLimited(clientIp);
+    if (retryAfter > 0) return rejectRateLimited(res, retryAfter);
+  }
 
-  // Simulate resource calculation
+  const requestedPages = Number(pages) > 0 ? Math.floor(Number(pages)) : 100;
+  const numPages = isSecure ? Math.min(requestedPages, SECURE_LIMITS.maxReportPages) : requestedPages;
+
   const estimatedTokens = numPages * 500;
   const estimatedCost = (estimatedTokens / 1000) * 0.03;
-  const estimatedTimeMinutes = numPages * 0.5;
+  const estimatedMinutes = numPages * 0.5;
   totalCost += estimatedCost;
 
   res.json({
-    vulnerability: 'LLM10 - Unbounded Consumption',
-    action: 'Report generation accepted WITHOUT resource limits',
-    request: {
-      pages: numPages,
-      complexity: complexityLevel,
-      estimatedTokens,
-      estimatedCost: `$${estimatedCost.toFixed(2)}`,
-      estimatedTime: `${estimatedTimeMinutes.toFixed(0)} minutes`,
-    },
-    warnings: [
-      `No page limit enforced (requested ${numPages} pages)`,
-      `Complexity "${complexityLevel}" accepted without validation`,
-      `Estimated cost: $${estimatedCost.toFixed(2)} with no budget check`,
-      `No timeout configured for ${estimatedTimeMinutes.toFixed(0)}-minute operation`,
-      'No queue or throttling for resource-intensive requests',
-    ],
-    totalAccumulatedCost: `$${totalCost.toFixed(4)}`,
+    status: 'accepted',
+    pagesRequested: requestedPages,
+    pages: numPages,
+    capped: numPages < requestedPages,
+    estimatedTokens,
+    estimatedCost: `$${estimatedCost.toFixed(2)}`,
+    estimatedTime: `${estimatedMinutes.toFixed(0)} minutes`,
+    totalSpendToday: `$${totalCost.toFixed(2)}`,
   });
 });
 
-// VULNERABILITY: Bulk processing with no limits
-router.post('/batch-process', (req, res) => {
-  const { items } = req.body;
-
-  if (!items || !Array.isArray(items)) {
-    return res.status(400).json({ error: 'Items array is required' });
-  }
-
-  // VULNERABILITY: No limit on batch size
-  const batchCost = items.length * 0.05;
-  totalCost += batchCost;
-
-  res.json({
-    vulnerability: 'LLM10 - Unbounded Consumption',
-    action: 'Batch processing accepted WITHOUT size limits',
-    itemsAccepted: items.length,
-    estimatedCost: `$${batchCost.toFixed(2)}`,
-    warnings: [
-      `Accepted ${items.length} items with no batch size limit`,
-      'No per-request or per-user budget enforcement',
-      'An attacker could submit millions of items',
-      'No queue prioritization or fair scheduling',
-    ],
-    totalAccumulatedCost: `$${totalCost.toFixed(4)}`,
-  });
-});
-
-// Stats endpoint - shows abuse potential
 router.get('/stats', (req, res) => {
-  const elapsed = Object.values(requestCounts).reduce((max, r) => {
-    const age = (Date.now() - r.firstRequest) / 1000;
-    return age > max ? age : max;
-  }, 0);
-
   res.json({
-    vulnerability: 'LLM10 - Unbounded Consumption',
-    totalRequests: Object.values(requestCounts).reduce((sum, r) => sum + r.count, 0),
+    totalRequests: Object.values(requestCounts).reduce((sum, n) => sum + n, 0),
     uniqueClients: Object.keys(requestCounts).length,
-    totalAccumulatedCost: `$${totalCost.toFixed(4)}`,
+    totalSpendToday: `$${totalCost.toFixed(2)}`,
     requestsByClient: requestCounts,
-    elapsedSeconds: elapsed.toFixed(0),
-    warning: 'No rate limiting, budget caps, or abuse detection in place',
   });
 });
 
-// Reset stats
 router.post('/reset', (req, res) => {
   requestCounts = {};
+  secureWindows = {};
   totalCost = 0;
-  res.json({ message: 'Stats reset' });
+  res.json({ message: 'Stats and rate limits reset' });
 });
 
-// Info endpoint
 router.get('/info', (req, res) => {
   res.json({
     vulnerability: 'LLM10 - Unbounded Consumption',
     description: 'No rate limiting, input size limits, or budget controls allow resource exhaustion and financial abuse',
+    secureLimits: SECURE_LIMITS,
     attackExamples: [
-      'Send rapid-fire requests (no rate limiting)',
-      'Submit extremely long messages (no input size limit)',
-      'Request massive report generation (no resource caps)',
-      'Batch-process millions of items (no batch limits)',
+      'Request 100,000 output tokens',
+      'Send a 5,000-word input',
+      'Fire 10 requests in a burst',
+      'Generate a 10,000-page report',
     ],
   });
 });

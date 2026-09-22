@@ -28,17 +28,6 @@ const SecurityMisconfiguration: React.FC<WebVulnProps> = ({ meta, next }) => {
     setLoading(false);
   };
 
-  const handleErrorTrigger = async () => {
-    setLoading(true);
-    try {
-      // This request is expected to fail and return a detailed error
-      await axios.get(`${meta.apiBase}/error`);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
   const handleDebugInfo = async () => {
     setLoading(true);
     try {
@@ -84,7 +73,7 @@ const SecurityMisconfiguration: React.FC<WebVulnProps> = ({ meta, next }) => {
           <label>
             Password:
             <input
-              type="password"
+              type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -96,21 +85,7 @@ const SecurityMisconfiguration: React.FC<WebVulnProps> = ({ meta, next }) => {
       </div>
 
       <div className="demo-section">
-        <h2>🐞 Demo 2: Verbose Error Messages</h2>
-        <p>
-          Exposing detailed error messages in a production environment can leak
-          sensitive information about the system's architecture, libraries, and
-          even credentials. Click the button to trigger a simulated server error.
-        </p>
-        <div className="demo-controls">
-          <button onClick={handleErrorTrigger} disabled={loading}>
-            Trigger Server Error
-          </button>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>🐛 Demo 3: Exposed Debug Endpoint</h2>
+        <h2>🐛 Demo 2: Exposed Debug Endpoint</h2>
         <p>
           Debug endpoints are often left enabled in production environments by
           mistake. These can expose a wealth of sensitive information, including

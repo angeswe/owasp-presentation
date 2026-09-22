@@ -30,7 +30,8 @@ export function useLLMStream() {
     setState({ text: '', isStreaming: true, isThinking: true, error: null });
 
     try {
-      const url = `${API_BASE}${endpoint}`;
+      // Accept either a full URL (e.g. `${meta.apiBase}/chat`) or a path under API_BASE.
+      const url = /^https?:\/\//.test(endpoint) ? endpoint : `${API_BASE}${endpoint}`;
       const response = await fetch(url, {
         method: body ? 'POST' : 'GET',
         headers: body ? { 'Content-Type': 'application/json' } : {},

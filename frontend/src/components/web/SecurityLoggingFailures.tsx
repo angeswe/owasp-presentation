@@ -8,8 +8,6 @@ const SecurityLoggingFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [userId, setUserId] = useState("1");
   const [action, setAction] = useState("update_role");
   const [target, setTarget] = useState("user:2");
-  const [loginUsername, setLoginUsername] = useState("user");
-  const [loginPassword, setLoginPassword] = useState("password");
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showCSharpExamples, setShowCSharpExamples] = useState(false);
@@ -23,23 +21,6 @@ const SecurityLoggingFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
           user_id: userId,
           action: action,
           target: target,
-        }
-      );
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
-  const handleInsufficientLogin = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `${meta.apiBase}/login-attempt`,
-        {
-          username: loginUsername,
-          password: loginPassword,
         }
       );
       setResponse(res.data);
@@ -115,37 +96,7 @@ const SecurityLoggingFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
       </div>
 
       <div className="demo-section">
-        <h2>📝 Demo 2: Insufficient Login Logging</h2>
-        <p>
-          This demo simulates a login attempt. Whether successful or not, the
-          system fails to log critical details like the source IP address, user
-          agent, or a timestamp, making it hard to trace suspicious activity.
-        </p>
-        <div className="demo-controls">
-          <label>
-            Username:
-            <input
-              type="text"
-              value={loginUsername}
-              onChange={(e) => setLoginUsername(e.target.value)}
-            />
-          </label>
-          <label>
-            Password:
-            <input
-              type="password"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-            />
-          </label>
-          <button onClick={handleInsufficientLogin} disabled={loading}>
-            Attempt Login
-          </button>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>📄 Demo 3: Sensitive Data in Logs</h2>
+        <h2>📄 Demo 2: Sensitive Data in Logs</h2>
         <p>
           This demo simulates fetching application logs that improperly contain
           sensitive data like passwords, API keys, and PII. Exposing this

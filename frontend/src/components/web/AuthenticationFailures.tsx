@@ -8,8 +8,7 @@ const AuthenticationFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [username, setUsername] = useState("user");
   const [password, setPassword] = useState("wrong-password");
   const [jwtUsername, setJwtUsername] = useState("admin");
-  const [jwtPassword, setJwtPassword] = useState("new_password_123");
-  const [recoveryUsername, setRecoveryUsername] = useState("user");
+  const [jwtPassword, setJwtPassword] = useState("admin123");
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showCSharpExamples, setShowCSharpExamples] = useState(false);
@@ -38,22 +37,6 @@ const AuthenticationFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
         username: jwtUsername,
         password: jwtPassword,
       });
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
-  const handlePasswordRecovery = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `${meta.apiBase}/forgot-password`,
-        {
-          username: recoveryUsername,
-        }
-      );
       setResponse(res.data);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -94,7 +77,7 @@ const AuthenticationFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
           <label>
             Password:
             <input
-              type="password"
+              type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -124,35 +107,13 @@ const AuthenticationFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
           <label>
             Password:
             <input
-              type="password"
+              type="text"
               value={jwtPassword}
               onChange={(e) => setJwtPassword(e.target.value)}
             />
           </label>
           <button onClick={handleJwtLogin} disabled={loading}>
             Login for JWT
-          </button>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>🔓 Demo 3: Insecure Password Recovery</h2>
-        <p>
-          This demo shows a password recovery function that is fundamentally
-          broken. Instead of sending a secure reset link, it returns the user's
-          plaintext password directly, exposing it to attackers.
-        </p>
-        <div className="demo-controls">
-          <label>
-            Username to Recover:
-            <input
-              type="text"
-              value={recoveryUsername}
-              onChange={(e) => setRecoveryUsername(e.target.value)}
-            />
-          </label>
-          <button onClick={handlePasswordRecovery} disabled={loading}>
-            Recover Password
           </button>
         </div>
       </div>

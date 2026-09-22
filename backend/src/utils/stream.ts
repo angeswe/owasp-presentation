@@ -7,7 +7,7 @@ import { Response } from 'express';
 export function streamResponse(
   res: Response,
   text: string,
-  delayMs: number = 50
+  delayMs: number = 25
 ): Promise<void> {
   return new Promise((resolve) => {
     res.setHeader('Content-Type', 'text/event-stream');

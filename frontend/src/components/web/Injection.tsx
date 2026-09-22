@@ -7,8 +7,6 @@ import { WebVulnProps } from "./types";
 const Injection: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [searchQuery, setSearchQuery] = useState("' OR 1=1--");
   const [commandHost, setCommandHost] = useState("8.8.8.8; ls");
-  const [loginUsername, setLoginUsername] = useState("admin'--");
-  const [loginPassword, setLoginPassword] = useState("password");
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showCSharpExamples, setShowCSharpExamples] = useState(false);
@@ -33,20 +31,6 @@ const Injection: React.FC<WebVulnProps> = ({ meta, next }) => {
     try {
       const res = await axios.post(`${meta.apiBase}/ping`, {
         host: commandHost,
-      });
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
-  const testSqlLoginInjection = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.post(`${meta.apiBase}/login`, {
-        username: loginUsername,
-        password: loginPassword,
       });
       setResponse(res.data);
     } catch (error: any) {
@@ -93,10 +77,12 @@ const Injection: React.FC<WebVulnProps> = ({ meta, next }) => {
         </div>
 
         <div className="attack-examples">
-          <h4>🚨 Try these SQL injection attacks:</h4>
+          <h4>🚨 Why it works:</h4>
           <code>' OR 1=1--</code>
-          <code>' UNION SELECT username, password FROM users--</code>
-          <code>'; DROP TABLE posts;--</code>
+          <p style={{ margin: '0.5rem 0 0 0' }}>
+            1=1 is always true and -- comments out the rest of the query, so
+            every post comes back, private ones included.
+          </p>
         </div>
       </div>
 
@@ -122,48 +108,8 @@ const Injection: React.FC<WebVulnProps> = ({ meta, next }) => {
           </button>
         </div>
         <div className="attack-examples">
-          <h4>🚨 Try these command injection attacks:</h4>
-          <code>8.8.8.8; ls -l</code>
+          <h4>🚨 Also try:</h4>
           <code>8.8.8.8 && whoami</code>
-          <code>; cat /etc/passwd</code>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>🔑 Demo 3: SQL Injection Login Bypass</h2>
-        <p>
-          This demo showcases how SQL injection can be used to bypass a login
-          form. By injecting a query fragment into the username field, an
-          attacker can log in without a valid password.
-        </p>
-        <div className="demo-controls">
-          <label>
-            Username:
-            <input
-              type="text"
-              value={loginUsername}
-              onChange={(e) => setLoginUsername(e.target.value)}
-            />
-          </label>
-          <label>
-            Password:
-            <input
-              type="password"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-            />
-          </label>
-          <button onClick={testSqlLoginInjection} disabled={loading}>
-            Attempt Login
-          </button>
-        </div>
-        <div className="attack-examples">
-          <h4>🚨 Try this login bypass attack:</h4>
-          <code>Username: admin'--</code>
-          <p style={{ margin: '0.5rem 0 0 0', color: '#721c24' }}>
-            The '--' comments out the rest of the SQL query, so the password is
-            never checked.
-          </p>
         </div>
       </div>
 

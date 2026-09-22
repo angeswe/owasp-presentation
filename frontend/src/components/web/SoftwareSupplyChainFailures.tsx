@@ -7,9 +7,6 @@ import { WebVulnProps } from "./types";
 const SoftwareSupplyChainFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [artifactUrl, setArtifactUrl] = useState(
-    "http://cdn.build-cache.internal/app-release-2.4.1.tar.gz"
-  );
   const [showCSharpExamples, setShowCSharpExamples] = useState(false);
 
   const fetchDependencies = async () => {
@@ -23,34 +20,10 @@ const SoftwareSupplyChainFailures: React.FC<WebVulnProps> = ({ meta, next }) => 
     setLoading(false);
   };
 
-  const handleUnpatchedInfo = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${meta.apiBase}/unpatched-info`);
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
   const handleDependencyConfusion = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${meta.apiBase}/dependency-confusion`);
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
-  const handleVerifyArtifact = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.post(`${meta.apiBase}/verify-artifact`, {
-        url: artifactUrl,
-      });
       setResponse(res.data);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -87,35 +60,22 @@ const SoftwareSupplyChainFailures: React.FC<WebVulnProps> = ({ meta, next }) => 
       </div>
 
       <div className="demo-section">
-        <h2>📦 Demo 1: Outdated &amp; Vulnerable Dependencies</h2>
+        <h2>📦 Demo 1: Vulnerable Dependencies</h2>
         <p>
-          This demo simulates a scan that finds outdated and vulnerable
-          dependencies in the project. An attacker can exploit these known
-          vulnerabilities to compromise the application.
+          This demo simulates a dependency scan. It lists the outdated packages
+          in the project and the known CVEs (Common Vulnerabilities and
+          Exposures) that affect those versions. Attackers use these published
+          exploits against applications that never updated.
         </p>
         <div className="demo-controls">
           <button onClick={fetchDependencies} disabled={loading}>
-            Scan for Outdated Dependencies
+            Scan Dependencies
           </button>
         </div>
       </div>
 
       <div className="demo-section">
-        <h2>🚨 Demo 2: Unpatched CVEs</h2>
-        <p>
-          This demo simulates a security scanner finding critical, unpatched
-          vulnerabilities (CVEs - Common Vulnerabilities and Exposures) in the application's components. Each CVE
-          represents a known exploit that attackers can use.
-        </p>
-        <div className="demo-controls">
-          <button onClick={handleUnpatchedInfo} disabled={loading}>
-            Scan for Unpatched CVEs
-          </button>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>🎭 Demo 3: Dependency Confusion</h2>
+        <h2>🎭 Demo 2: Dependency Confusion</h2>
         <p>
           An internal package name (<code>@acme/auth-utils</code>) also exists on
           the public registry — at a higher version. With no scoped-registry
@@ -138,31 +98,7 @@ const SoftwareSupplyChainFailures: React.FC<WebVulnProps> = ({ meta, next }) => 
       </div>
 
       <div className="demo-section">
-        <h2>📥 Demo 4: Unsigned / Unverified Build Artifact</h2>
-        <p>
-          The deploy pipeline downloads a release artifact and ships it with no
-          checksum or signature check. A tampered tarball — from a compromised
-          CDN or a man-in-the-middle over plain HTTP — is trusted and deployed
-          straight to production.
-        </p>
-        <div className="demo-controls">
-          <label>
-            Artifact URL:
-            <input
-              type="text"
-              value={artifactUrl}
-              onChange={(e) => setArtifactUrl(e.target.value)}
-              style={{ width: "400px" }}
-            />
-          </label>
-          <button onClick={handleVerifyArtifact} disabled={loading}>
-            "Verify" &amp; Deploy
-          </button>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>🪝 Demo 5: Malicious postinstall Script</h2>
+        <h2>🪝 Demo 3: Malicious postinstall Script</h2>
         <p>
           Package lifecycle scripts run arbitrary code on every{" "}
           <code>npm install</code>. This demo shows what a malicious dependency's

@@ -1,69 +1,104 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
 import { useLLMStream } from "../../hooks/useLLMStream";
-import "../VulnerabilityPage.css";
+import { LLMVulnProps } from "./types";
+import {
+  DemoTopBar,
+  LLMNextNav,
+  LLMPageHeader,
+  PresetChips,
+  StreamOutput,
+  WhyItWorked,
+} from "./LLMDemoParts";
 
-const API_BASE = "http://localhost:3001/api";
+interface ConsumptionPreset {
+  label: string;
+  kind: "chat" | "burst";
+  message: string;
+  maxTokens: number;
+}
 
-const LLM10UnboundedConsumption: React.FC = () => {
+const HUGE_INPUT = "lorem ".repeat(5000).trim();
+
+const PRESETS: ConsumptionPreset[] = [
+  { label: "Request 100,000 output tokens", kind: "chat", message: "Write a detailed essay about cloud computing.", maxTokens: 100000 },
+  { label: "Huge input (5,000 words)", kind: "chat", message: HUGE_INPUT, maxTokens: 1000 },
+  { label: "Burst 10 requests", kind: "burst", message: "ping", maxTokens: 100 },
+];
+
+interface BurstResult {
+  accepted: number;
+  rejected: number;
+  statuses: number[];
+}
+
+const LLM10UnboundedConsumption: React.FC<LLMVulnProps> = ({ meta, next }) => {
   const [message, setMessage] = useState("");
-  const [maxTokens, setMaxTokens] = useState("4096");
-  const [pages, setPages] = useState("100");
-  const [batchSize, setBatchSize] = useState("1000");
-  const [stats, setStats] = useState<any>(null);
-  const [reportResponse, setReportResponse] = useState<any>(null);
-  const [batchResponse, setBatchResponse] = useState<any>(null);
+  const [maxTokens, setMaxTokens] = useState(1000);
+  const [secure, setSecure] = useState(false);
+  const [burst, setBurst] = useState<BurstResult | null>(null);
+  const [report, setReport] = useState<{ status: number; data: any } | null>(null);
   const { text, isStreaming, isThinking, error, startStream, reset } = useLLMStream();
 
-  const sendRequest = async () => {
-    if (!message.trim()) return;
-    await startStream("/llm10/chat", { message, maxTokens: parseInt(maxTokens) });
+  const send = (msg: string, tokens: number) => {
+    if (!msg.trim()) return;
+    setBurst(null);
+    setReport(null);
+    startStream(`${meta.apiBase}/chat`, { message: msg, maxTokens: tokens, secure });
+  };
+
+  const runBurst = async (msg: string, tokens: number) => {
+    reset();
+    setReport(null);
+    setBurst(null);
+    const statuses = await Promise.all(
+      Array.from({ length: 10 }, async () => {
+        try {
+          const res = await fetch(`${meta.apiBase}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg, maxTokens: tokens, secure }),
+          });
+          // Only the status matters here; drop the streamed body.
+          res.body?.cancel().catch(() => {});
+          return res.status;
+        } catch {
+          return 0;
+        }
+      })
+    );
+    setBurst({
+      accepted: statuses.filter((s) => s === 200).length,
+      rejected: statuses.filter((s) => s === 429).length,
+      statuses,
+    });
   };
 
   const generateReport = async () => {
-    try {
-      const res = await axios.post(`${API_BASE}/llm10/generate-report`, {
-        pages: parseInt(pages),
-        complexity: 'maximum',
-      });
-      setReportResponse(res.data);
-    } catch (err: any) {
-      setReportResponse(err.response?.data || { error: err.message });
-    }
-  };
-
-  const submitBatch = async () => {
-    const items = Array.from({ length: parseInt(batchSize) }, (_, i) => `item-${i}`);
-    try {
-      const res = await axios.post(`${API_BASE}/llm10/batch-process`, { items });
-      setBatchResponse(res.data);
-    } catch (err: any) {
-      setBatchResponse(err.response?.data || { error: err.message });
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/llm10/stats`);
-      setStats(res.data);
-    } catch {}
-  };
-
-  const resetStats = async () => {
-    await axios.post(`${API_BASE}/llm10/reset`);
-    setStats(null);
-    setReportResponse(null);
-    setBatchResponse(null);
     reset();
+    setBurst(null);
+    try {
+      const res = await axios.post(`${meta.apiBase}/generate-report`, { pages: 10000, secure });
+      setReport({ status: res.status, data: res.data });
+    } catch (err: any) {
+      setReport({ status: err.response?.status ?? 0, data: err.response?.data || { error: err.message } });
+    }
+  };
+
+  const resetServer = async () => {
+    try {
+      await axios.post(`${meta.apiBase}/reset`);
+    } catch {
+      // ignore: reset is a convenience for the presenter
+    }
+    reset();
+    setBurst(null);
+    setReport(null);
   };
 
   return (
     <div className="vulnerability-page">
-      <div className="vuln-header">
-        <h1>LLM10 - Unbounded Consumption</h1>
-        <div className="vulnerability-badge" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>OWASP LLM #10</div>
-      </div>
+      <LLMPageHeader meta={meta} />
 
       <div className="vuln-description">
         <p>
@@ -74,97 +109,86 @@ const LLM10UnboundedConsumption: React.FC = () => {
       </div>
 
       <div className="demo-section">
-        <h2>Demo 1: No Rate Limiting</h2>
+        <DemoTopBar title="Demo: No Limits on a Pay-per-Token API" secure={secure} onSecureChange={setSecure} />
         <p>
-          Send requests with no rate limiting or input size restrictions. Each
-          request accumulates cost with no budget enforcement.
+          Every request is billed per token. Ask for a lot, send a lot, or send many requests at once.
         </p>
+
+        <PresetChips
+          presets={PRESETS}
+          disabled={isStreaming}
+          onPick={(p) => {
+            setMaxTokens(p.maxTokens);
+            if (p.kind === "burst") {
+              setMessage(p.message);
+              runBurst(p.message, p.maxTokens);
+            } else {
+              setMessage(p.message === HUGE_INPUT ? "lorem lorem lorem ... (5,000 words)" : p.message);
+              send(p.message, p.maxTokens);
+            }
+          }}
+        />
 
         <div className="demo-controls" style={{ flexDirection: "column", alignItems: "stretch" }}>
           <label>
-            Message (try a very long one):
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type any message - no input size limit enforced!"
-              rows={2} style={{ width: "100%", resize: "vertical" }} />
+            Message:
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Send a message to the API"
+              rows={2}
+              style={{ width: "100%", resize: "vertical" }}
+            />
           </label>
           <label>
-            Max output tokens (no cap):
-            <input type="number" value={maxTokens} onChange={(e) => setMaxTokens(e.target.value)}
-              min="1" max="1000000" style={{ width: "200px" }} />
+            Max output tokens:
+            <input
+              type="number"
+              value={maxTokens}
+              min={1}
+              onChange={(e) => setMaxTokens(Number(e.target.value))}
+              style={{ width: "10rem" }}
+            />
           </label>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button onClick={sendRequest} disabled={isStreaming || !message.trim()}>
-              Send Request
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <button onClick={() => send(message, maxTokens)} disabled={isStreaming || !message.trim()}>
+              Send
             </button>
-            <button onClick={loadStats} style={{ background: "#2980b9" }}>
-              View Stats
+            <button onClick={generateReport} style={{ background: "#e67e22" }}>
+              Generate 10,000-page report
             </button>
-            <button onClick={resetStats} style={{ background: "#6c757d" }}>
-              Reset All
+            <button onClick={resetServer} style={{ background: "#6c757d" }}>
+              Reset
             </button>
           </div>
         </div>
       </div>
 
-      {(text || isThinking || error) && (
+      <StreamOutput title="API Response:" text={text} isThinking={isThinking} isStreaming={isStreaming} error={error} />
+
+      {burst && (
         <div className="response-section">
-          <h3>Response:</h3>
-          <div className="response-box" style={{ minHeight: "60px" }}>
-            {isThinking && <span style={{ color: "#a0aec0", fontStyle: "italic" }}>Processing...</span>}
-            {text}
-            {isStreaming && <span style={{ animation: "blink 1s infinite" }}>|</span>}
-            {error && <span style={{ color: "#fc8181" }}>Error: {error}</span>}
-          </div>
+          <h3>Burst of 10 requests:</h3>
+          <pre className="response-box">
+            {`Accepted (200): ${burst.accepted}\nRejected (429): ${burst.rejected}\nStatuses: ${burst.statuses.join(", ")}`}
+          </pre>
         </div>
       )}
 
-      <div className="demo-section">
-        <h2>Demo 2: Resource-Intensive Requests</h2>
-        <p>Request massive report generation and batch processing with no limits.</p>
-
-        <div className="demo-controls">
-          <label>
-            Pages to generate:
-            <input type="number" value={pages} onChange={(e) => setPages(e.target.value)}
-              min="1" max="100000" style={{ width: "120px" }} />
-          </label>
-          <button onClick={generateReport}>
-            Generate Report (No Limits)
-          </button>
-        </div>
-
-        <div className="demo-controls">
-          <label>
-            Batch items:
-            <input type="number" value={batchSize} onChange={(e) => setBatchSize(e.target.value)}
-              min="1" max="1000000" style={{ width: "120px" }} />
-          </label>
-          <button onClick={submitBatch}>
-            Submit Batch (No Size Limit)
-          </button>
-        </div>
-      </div>
-
-      {reportResponse && (
+      {report && (
         <div className="response-section">
-          <h3>Report Generation Result:</h3>
-          <pre className="response-box">{JSON.stringify(reportResponse, null, 2)}</pre>
+          <h3>Report job (HTTP {report.status}):</h3>
+          <pre className="response-box">{JSON.stringify(report.data, null, 2)}</pre>
         </div>
       )}
 
-      {batchResponse && (
-        <div className="response-section">
-          <h3>Batch Processing Result:</h3>
-          <pre className="response-box">{JSON.stringify(batchResponse, null, 2)}</pre>
-        </div>
-      )}
-
-      {stats && (
-        <div className="response-section">
-          <h3>Abuse Statistics:</h3>
-          <pre className="response-box">{JSON.stringify(stats, null, 2)}</pre>
-        </div>
-      )}
+      <WhyItWorked
+        items={[
+          "The API accepts any output token count, any input size and any number of requests. Each one is billed.",
+          "An attacker, or one buggy client loop, can run up the bill or starve other users.",
+          "Secure mode: 5 requests per minute per IP (HTTP 429), output capped at 1,024 tokens, input capped at 2,000 tokens (HTTP 413), reports capped at 50 pages.",
+        ]}
+      />
 
       <div className="remediation-section">
         <h2>How to Fix This</h2>
@@ -202,18 +226,7 @@ const LLM10UnboundedConsumption: React.FC = () => {
         </div>
       </div>
 
-      <div className="navigation-section">
-        <Link to="/llm" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
-          &larr; Back to LLM Top 10 Home
-        </Link>
-      </div>
-
-      <style>{`
-        @keyframes blink {
-          0%, 50% { opacity: 1; }
-          51%, 100% { opacity: 0; }
-        }
-      `}</style>
+      <LLMNextNav next={next} />
     </div>
   );
 };

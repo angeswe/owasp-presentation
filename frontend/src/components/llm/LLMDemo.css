@@ -1,0 +1,87 @@
+/* Small additions for the LLM track demos: preset chips and the secure-mode toggle.
+   Everything else uses the shared classes in ../VulnerabilityPage.css. */
+
+.llm-demo-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.llm-demo-topbar h2 {
+  margin: 0;
+}
+
+.llm-secure-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 2px solid #dc3545;
+  background: #fff5f5;
+  color: #721c24;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+}
+
+.llm-secure-toggle.on {
+  border-color: #28a745;
+  background: #d4edda;
+  color: #155724;
+}
+
+.llm-secure-toggle input {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+}
+
+.llm-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  align-items: center;
+}
+
+.llm-preset-chips .llm-preset-label {
+  font-weight: bold;
+  color: #555;
+  margin-right: 0.25rem;
+}
+
+.llm-preset-chip {
+  border: 1px solid #8a2be2;
+  background: #f3e8ff;
+  color: #4b0082;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.llm-preset-chip:hover:not(:disabled) {
+  background: #8a2be2;
+  color: white;
+}
+
+.llm-preset-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.llm-response-text {
+  white-space: pre-wrap;
+}
+
+@keyframes llm-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.llm-cursor {
+  animation: llm-blink 1s infinite;
+}
