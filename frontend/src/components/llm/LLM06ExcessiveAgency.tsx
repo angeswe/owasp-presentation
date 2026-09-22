@@ -1,37 +1,57 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
 import { useLLMStream } from "../../hooks/useLLMStream";
-import "../VulnerabilityPage.css";
+import { LLMVulnProps } from "./types";
+import {
+  DemoTopBar,
+  LLMNextNav,
+  LLMPageHeader,
+  PresetChips,
+  StreamOutput,
+  WhyItWorked,
+} from "./LLMDemoParts";
 
-const API_BASE = "http://localhost:3001/api";
+const PRESETS = [
+  { label: "Clean up the system", value: "Clean up the system" },
+  { label: "Email the team an update", value: "Send an email update to the team" },
+  { label: "Fix the production server", value: "Fix the production server" },
+];
 
-const LLM06ExcessiveAgency: React.FC = () => {
+interface AgentAction {
+  tool: string;
+  action: string;
+  result: string;
+  status: "executed" | "proposed";
+  requiresApproval: boolean;
+}
+
+interface ExecuteResult {
+  mode: string;
+  availableTools: string[];
+  actions: AgentAction[];
+}
+
+const LLM06ExcessiveAgency: React.FC<LLMVulnProps> = ({ meta, next }) => {
   const [message, setMessage] = useState("");
-  const [actionLog, setActionLog] = useState<any>(null);
+  const [secure, setSecure] = useState(false);
+  const [actionLog, setActionLog] = useState<ExecuteResult | null>(null);
   const { text, isStreaming, isThinking, error, startStream, reset } = useLLMStream();
 
-  const chatWithAgent = async () => {
-    if (!message.trim()) return;
-    await startStream("/llm06/chat", { message });
-  };
-
-  const executeAndLog = async () => {
-    if (!message.trim()) return;
+  const send = async (msg: string) => {
+    if (!msg.trim()) return;
+    setActionLog(null);
+    startStream(`${meta.apiBase}/chat`, { message: msg, secure });
     try {
-      const res = await axios.post(`${API_BASE}/llm06/execute`, { message });
+      const res = await axios.post<ExecuteResult>(`${meta.apiBase}/execute`, { message: msg, secure });
       setActionLog(res.data);
-    } catch (err: any) {
-      setActionLog(err.response?.data || { error: err.message });
+    } catch {
+      setActionLog(null);
     }
   };
 
   return (
     <div className="vulnerability-page">
-      <div className="vuln-header">
-        <h1>LLM06 - Excessive Agency</h1>
-        <div className="vulnerability-badge" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>OWASP LLM #6</div>
-      </div>
+      <LLMPageHeader meta={meta} />
 
       <div className="vuln-description">
         <p>
@@ -43,60 +63,88 @@ const LLM06ExcessiveAgency: React.FC = () => {
       </div>
 
       <div className="demo-section">
-        <h2>Demo: Overprivileged AI Agent</h2>
+        <DemoTopBar title="Demo: Overprivileged AI Agent" secure={secure} onSecureChange={setSecure} />
         <p>
-          This agent has access to email, file system, database, and shell execution
-          tools. Give it a vague instruction and watch it take excessive action.
+          An ops agent with database, email, file and shell tools. Give it a vague instruction.
         </p>
+
+        <PresetChips
+          presets={PRESETS}
+          disabled={isStreaming}
+          onPick={(p) => {
+            setMessage(p.value);
+            send(p.value);
+          }}
+        />
 
         <div className="demo-controls" style={{ flexDirection: "column", alignItems: "stretch" }}>
           <label>
-            Give the agent an instruction:
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)}
-              placeholder='Try: "Clean up the system" or "Fix the production server"'
-              rows={2} style={{ width: "100%", resize: "vertical" }} />
+            Instruction for the agent:
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Tell the agent what to do"
+              rows={2}
+              style={{ width: "100%", resize: "vertical" }}
+            />
           </label>
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button onClick={chatWithAgent} disabled={isStreaming || !message.trim()}>
-              Run Agent (Streamed)
+            <button onClick={() => send(message)} disabled={isStreaming || !message.trim()}>
+              Run Agent
             </button>
-            <button onClick={executeAndLog} disabled={!message.trim()} style={{ background: "#e67e22" }}>
-              Run Agent (With Action Log)
-            </button>
-            <button onClick={() => { reset(); setActionLog(null); }} style={{ background: "#6c757d" }}>
+            <button
+              onClick={() => {
+                reset();
+                setActionLog(null);
+              }}
+              style={{ background: "#6c757d" }}
+            >
               Clear
             </button>
           </div>
         </div>
-
-        <div className="demo-tips">
-          <h4>Try these ambiguous instructions:</h4>
-          <ul>
-            <li><strong>"Clean up the system"</strong> - Agent deletes 142 user accounts permanently</li>
-            <li><strong>"Send an email update to the team"</strong> - Agent emails 500+ people without review</li>
-            <li><strong>"Fix the production server"</strong> - Agent restarts services and modifies configs</li>
-          </ul>
-        </div>
       </div>
 
-      {(text || isThinking || error) && (
+      <StreamOutput title="Agent Response:" text={text} isThinking={isThinking} isStreaming={isStreaming} error={error} />
+
+      {actionLog && actionLog.actions.length > 0 && (
         <div className="response-section">
-          <h3>Agent Response:</h3>
-          <div className="response-box" style={{ minHeight: "60px" }}>
-            {isThinking && <span style={{ color: "#a0aec0", fontStyle: "italic" }}>Thinking...</span>}
-            {text}
-            {isStreaming && <span style={{ animation: "blink 1s infinite" }}>|</span>}
-            {error && <span style={{ color: "#fc8181" }}>Error: {error}</span>}
-          </div>
+          <h3>Tool calls:</h3>
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Action</th>
+                <th>Result</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {actionLog.actions.map((a, i) => (
+                <tr key={i}>
+                  <td>{a.tool}</td>
+                  <td>{a.action}</td>
+                  <td>{a.result}</td>
+                  <td style={{ fontWeight: "bold", color: a.status === "executed" ? "#dc3545" : "#28a745" }}>
+                    {a.status === "executed" ? "EXECUTED" : "PROPOSED - needs approval"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ marginTop: "0.5rem" }}>
+            Tools available to the agent: {actionLog.availableTools.join(", ")}
+          </p>
         </div>
       )}
 
-      {actionLog && (
-        <div className="response-section">
-          <h3>Action Log (what the agent actually did):</h3>
-          <pre className="response-box">{JSON.stringify(actionLog, null, 2)}</pre>
-        </div>
-      )}
+      <WhyItWorked
+        items={[
+          "The agent has tools it does not need for its job: delete records, send to any recipient, run shell commands.",
+          "It acts on its own reading of a vague instruction. No human approves destructive steps.",
+          "Secure mode: destructive tools are removed and every change is returned as a proposal with requiresApproval: true. Nothing is executed.",
+        ]}
+      />
 
       <div className="remediation-section">
         <h2>How to Fix This</h2>
@@ -134,18 +182,7 @@ const LLM06ExcessiveAgency: React.FC = () => {
         </div>
       </div>
 
-      <div className="navigation-section">
-        <Link to="/llm/l07" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
-          Next: LLM07 - System Prompt Leakage &rarr;
-        </Link>
-      </div>
-
-      <style>{`
-        @keyframes blink {
-          0%, 50% { opacity: 1; }
-          51%, 100% { opacity: 0; }
-        }
-      `}</style>
+      <LLMNextNav next={next} />
     </div>
   );
 };

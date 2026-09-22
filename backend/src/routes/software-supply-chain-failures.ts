@@ -20,6 +20,13 @@ router.get('/dependencies', (req, res) => {
       'moment': '2.18.1',  // Old version
       'request': '2.81.0'  // Deprecated package
     },
+    // Known issues for the versions above, so one scan shows versions and CVEs together.
+    known_cves: [
+      { package: 'lodash@4.17.4', cve: 'CVE-2020-8203', issue: 'Prototype pollution' },
+      { package: 'express@4.16.0', cve: 'CVE-2022-24999', issue: 'Prototype pollution in qs (denial of service)' },
+      { package: 'moment@2.18.1', cve: 'CVE-2022-24785', issue: 'Path traversal' },
+      { package: 'request@2.81.0', cve: 'n/a', issue: 'Deprecated and unmaintained: no security fixes' }
+    ],
     explanation: 'These old versions contain known security vulnerabilities'
   });
 });

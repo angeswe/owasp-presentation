@@ -1,39 +1,67 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
 import { useLLMStream } from "../../hooks/useLLMStream";
-import "../VulnerabilityPage.css";
+import { LLMVulnProps } from "./types";
+import {
+  DemoTopBar,
+  LLMNextNav,
+  LLMPageHeader,
+  PresetChips,
+  StreamOutput,
+  WhyItWorked,
+} from "./LLMDemoParts";
 
-const API_BASE = "http://localhost:3001/api";
+const PRESETS = [
+  { label: "Vitamin C for a cold", value: "How much vitamin C should I take to cure a cold?" },
+  { label: "AI copyright court cases", value: "Is AI-generated content copyrighted? Any court cases?" },
+  { label: "Is RSA-2048 still safe?", value: "Is RSA-2048 encryption still safe for our software?" },
+];
 
-const LLM09Misinformation: React.FC = () => {
+interface FactCheck {
+  claim: string;
+  isAccurate: boolean;
+  correction?: string;
+  confidence: number;
+}
+
+interface FactCheckResult {
+  topic: string;
+  mode: string;
+  factChecks: FactCheck[];
+  summary: string;
+}
+
+const LLM09Misinformation: React.FC<LLMVulnProps> = ({ meta, next }) => {
   const [message, setMessage] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState("");
-  const [factCheckResult, setFactCheckResult] = useState<any>(null);
+  const [lastMessage, setLastMessage] = useState("");
+  const [secure, setSecure] = useState(false);
+  const [factCheckResult, setFactCheckResult] = useState<FactCheckResult | null>(null);
+  const [factCheckError, setFactCheckError] = useState<string | null>(null);
   const { text, isStreaming, isThinking, error, startStream, reset } = useLLMStream();
 
-  const askLLM = async () => {
-    if (!message.trim()) return;
+  const ask = (msg: string) => {
+    if (!msg.trim()) return;
     setFactCheckResult(null);
-    await startStream("/llm09/chat", { message });
+    setFactCheckError(null);
+    setLastMessage(msg);
+    startStream(`${meta.apiBase}/chat`, { message: msg, secure });
   };
 
-  const factCheck = async (topic: string) => {
+  const factCheck = async () => {
+    if (!lastMessage) return;
+    setFactCheckError(null);
     try {
-      const res = await axios.post(`${API_BASE}/llm09/fact-check`, { topic });
+      const res = await axios.post<FactCheckResult>(`${meta.apiBase}/fact-check`, { message: lastMessage, secure });
       setFactCheckResult(res.data);
-      setSelectedTopic(topic);
     } catch (err: any) {
-      setFactCheckResult(err.response?.data || { error: err.message });
+      setFactCheckResult(null);
+      setFactCheckError(err.response?.data?.error || err.message);
     }
   };
 
   return (
     <div className="vulnerability-page">
-      <div className="vuln-header">
-        <h1>LLM09 - Misinformation</h1>
-        <div className="vulnerability-badge" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>OWASP LLM #9</div>
-      </div>
+      <LLMPageHeader meta={meta} />
 
       <div className="vuln-description">
         <p>
@@ -45,88 +73,91 @@ const LLM09Misinformation: React.FC = () => {
       </div>
 
       <div className="demo-section">
-        <h2>Demo 1: Hallucinated Responses</h2>
+        <DemoTopBar title="Demo: Confident, Wrong Answers" secure={secure} onSecureChange={setSecure} />
         <p>
-          Ask the model about medical, legal, or technical topics. It will generate
-          confident, detailed, but completely fabricated responses.
+          Ask a medical, legal or technical question. Then fact-check the answer.
         </p>
+
+        <PresetChips
+          presets={PRESETS}
+          disabled={isStreaming}
+          onPick={(p) => {
+            setMessage(p.value);
+            ask(p.value);
+          }}
+        />
 
         <div className="demo-controls" style={{ flexDirection: "column", alignItems: "stretch" }}>
           <label>
             Ask the LLM:
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)}
-              placeholder='Try: "Give me medical advice about vitamins" or "Tell me about recent legal cases on AI copyright"'
-              rows={2} style={{ width: "100%", resize: "vertical" }} />
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Ask a medical, legal or technical question"
+              rows={2}
+              style={{ width: "100%", resize: "vertical" }}
+            />
           </label>
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button onClick={askLLM} disabled={isStreaming || !message.trim()}>
+            <button onClick={() => ask(message)} disabled={isStreaming || !message.trim()}>
               Ask LLM
             </button>
-            <button onClick={() => { reset(); setFactCheckResult(null); }} style={{ background: "#6c757d" }}>
+            <button
+              onClick={factCheck}
+              disabled={isStreaming || !lastMessage}
+              style={{ background: "#e74c3c" }}
+            >
+              Fact-check this answer
+            </button>
+            <button
+              onClick={() => {
+                reset();
+                setFactCheckResult(null);
+                setFactCheckError(null);
+                setLastMessage("");
+              }}
+              style={{ background: "#6c757d" }}
+            >
               Clear
             </button>
           </div>
         </div>
-
-        <div className="demo-tips">
-          <h4>Try these topics:</h4>
-          <ul>
-            <li><strong>Medical:</strong> "Give me health recommendations about vitamins"</li>
-            <li><strong>Legal:</strong> "What are the recent legal cases about AI copyright?"</li>
-            <li><strong>Technical:</strong> "Tell me about software security encryption standards"</li>
-          </ul>
-        </div>
       </div>
 
-      {(text || isThinking || error) && (
+      <StreamOutput title="LLM Response:" text={text} isThinking={isThinking} isStreaming={isStreaming} error={error} />
+
+      {factCheckError && (
         <div className="response-section">
-          <h3>LLM Response (contains fabricated claims):</h3>
-          <div className="response-box" style={{ minHeight: "60px" }}>
-            {isThinking && <span style={{ color: "#a0aec0", fontStyle: "italic" }}>Generating response...</span>}
-            {text}
-            {isStreaming && <span style={{ animation: "blink 1s infinite" }}>|</span>}
-            {error && <span style={{ color: "#fc8181" }}>Error: {error}</span>}
-          </div>
+          <div className="response-box" style={{ color: "#fc8181" }}>Error: {factCheckError}</div>
         </div>
       )}
 
-      <div className="demo-section">
-        <h2>Demo 2: Fact-Check the Claims</h2>
-        <p>
-          Run fact-checking on the LLM's claims to reveal which statements are
-          fabricated and what the actual facts are.
-        </p>
-
-        <div className="demo-controls">
-          <button onClick={() => factCheck('medical')} style={{ background: "#e74c3c" }}>
-            Fact-Check Medical Claims
-          </button>
-          <button onClick={() => factCheck('legal')} style={{ background: "#e67e22" }}>
-            Fact-Check Legal Claims
-          </button>
-          <button onClick={() => factCheck('technical')} style={{ background: "#2980b9" }}>
-            Fact-Check Technical Claims
-          </button>
-        </div>
-      </div>
-
-      {factCheckResult && factCheckResult.factChecks && (
+      {factCheckResult && (
         <div className="response-section">
-          <h3>Fact-Check Results ({selectedTopic}):</h3>
+          <h3>Fact-Check Results ({factCheckResult.topic}):</h3>
           <div style={{ padding: "1rem" }}>
-            <p style={{ fontWeight: "bold", color: "#dc3545", marginBottom: "1rem" }}>
+            <p
+              style={{
+                fontWeight: "bold",
+                color: factCheckResult.factChecks.some((fc) => !fc.isAccurate) ? "#dc3545" : "#28a745",
+                marginBottom: "1rem",
+              }}
+            >
               {factCheckResult.summary}
             </p>
-            {factCheckResult.factChecks.map((fc: any, i: number) => (
-              <div key={i} style={{
-                padding: "1rem",
-                marginBottom: "0.75rem",
-                borderRadius: "8px",
-                border: `2px solid ${fc.isAccurate ? '#28a745' : '#dc3545'}`,
-                background: fc.isAccurate ? '#d4edda' : '#f8d7da',
-              }}>
+            {factCheckResult.factChecks.map((fc, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "1rem",
+                  marginBottom: "0.75rem",
+                  borderRadius: "8px",
+                  border: `2px solid ${fc.isAccurate ? "#28a745" : "#dc3545"}`,
+                  background: fc.isAccurate ? "#d4edda" : "#f8d7da",
+                }}
+              >
                 <p style={{ margin: "0 0 0.5rem 0", fontWeight: "bold" }}>
-                  {fc.isAccurate ? 'ACCURATE' : 'FALSE'}: "{fc.claim}"
+                  {fc.isAccurate ? "ACCURATE" : "FALSE"}: "{fc.claim}"
                 </p>
                 {fc.correction && (
                   <p style={{ margin: "0 0 0.25rem 0", fontSize: "0.9rem" }}>
@@ -141,6 +172,14 @@ const LLM09Misinformation: React.FC = () => {
           </div>
         </div>
       )}
+
+      <WhyItWorked
+        items={[
+          "The model predicts likely-sounding text. It has no built-in check that a study, court case or dosage is real.",
+          "Specific numbers, names and citations make a fabricated answer look authoritative.",
+          "Secure mode: the answer must cite a source or say none was found, and carries a warning to verify with a qualified professional.",
+        ]}
+      />
 
       <div className="remediation-section">
         <h2>How to Fix This</h2>
@@ -178,18 +217,7 @@ const LLM09Misinformation: React.FC = () => {
         </div>
       </div>
 
-      <div className="navigation-section">
-        <Link to="/llm/l10" className="next-button" style={{ background: "linear-gradient(135deg, #00ced1, #8a2be2)" }}>
-          Next: LLM10 - Unbounded Consumption &rarr;
-        </Link>
-      </div>
-
-      <style>{`
-        @keyframes blink {
-          0%, 50% { opacity: 1; }
-          51%, 100% { opacity: 0; }
-        }
-      `}</style>
+      <LLMNextNav next={next} />
     </div>
   );
 };

@@ -1,275 +1,129 @@
-# OWASP Top 10 Presentation Guide
+# OWASP Top 10 Presentation Guide (30-minute run sheet)
 
-## Pre-Presentation Setup
+This guide covers the whole talk: the OWASP Top 10:2025 (Web) and the OWASP Top 10
+for LLM Applications (2025). The LLM half has its own script in
+[`LLM_PRESENTATION_GUIDE.md`](./LLM_PRESENTATION_GUIDE.md).
 
-### Technical Requirements
-- [ ] Application running on isolated network
-- [ ] Backend API on http://localhost:3001
-- [ ] Frontend app on http://localhost:3000
-- [ ] Browser with developer tools
-- [ ] Screen sharing/projection ready
+The slot is 30 minutes for 20 items. That is about 75 seconds per item. Every demo
+in the app is one click: the input is prefilled with a payload that works. Say what
+the item is, click, read the response, say the fix, move on. Do not type during
+the talk.
 
-### Safety Checklist
-- [ ] Confirm no internet access during demo
-- [ ] Verify isolated environment
-- [ ] Backup slides in case of technical issues
-- [ ] Test all demo endpoints beforehand
+## Before you start
 
-## Presentation Flow (60-90 minutes)
+- [ ] `npm run dev:all` from the repo root
+- [ ] http://localhost:3001/health returns `VULNERABLE`
+- [ ] http://localhost:3000/web and http://localhost:3000/llm load
+- [ ] Browser zoom at 125% or more so the response box is readable
+- [ ] No internet needed; run on an isolated network
+- [ ] Click through every page once. The A01 privilege escalation and A06
+      password reset change the database. Restart the backend before the talk to
+      reset it.
 
-### Introduction (10 minutes)
-1. **Opening Warning**
-   - Emphasize educational purpose only
-   - Explain intentional vulnerabilities
-   - Stress isolation requirements
+## Schedule
 
-2. **OWASP Overview**
-   - What is OWASP
-   - Top 10 methodology
-   - 2025 updates: Security Misconfiguration up to #2; new **Software Supply
-     Chain Failures** (#3) and **Mishandling of Exceptional Conditions** (#10);
-     SSRF merged into Broken Access Control (#1)
+| Time  | Block                     | Notes                          |
+|-------|---------------------------|--------------------------------|
+| 0:00  | Intro                     | 2 minutes                      |
+| 2:00  | Web Top 10 (A01 to A10)   | 13 minutes, ~75 s each         |
+| 15:00 | LLM Top 10 (LLM01 to 10)  | 13 minutes, ~75 s each         |
+| 28:00 | Wrap-up                   | 2 minutes                      |
 
-### Core Demonstrations (60 minutes - 6 min per vulnerability)
+If you run late, skip the second demo on any page. The first demo on every page
+is the one that matters.
 
-#### A01 - Broken Access Control (6 min)
-**Demo Script:**
-1. Navigate to `/web/a01`
-2. Show direct object reference demo
-   - Try user ID 1 (admin data exposed)
-   - Try user ID 2 (regular user)
-   - Explain authorization bypass
-3. Demo admin panel access + privilege escalation
-   - Show unrestricted admin functions
-4. **SSRF (merged into A01 for 2025)** — Demos 4 & 5
-   - Fetch an internal URL the server shouldn't reach
-   - Port-scan localhost from the server's vantage point
-5. **Key Points:**
-   - Most common vulnerability
-   - Leads to data breaches
-   - Authorization vs authentication
-   - SSRF is now an access-control failure at the network layer
+## Intro (2 minutes)
 
-#### A02 - Security Misconfiguration (6 min)
-**Demo Script:**
-1. Navigate to `/web/a02`
-2. Show debug endpoint exposure
-3. Demonstrate default credentials
-4. **Key Points:**
-   - Configuration management (now #2, up from #5 in 2021)
-   - Default settings dangers
-   - Security hardening
+1. Open `/`. Say the app is intentionally vulnerable and never leaves this laptop.
+2. Say what changed in the 2025 list: Security Misconfiguration is up to #2,
+   Software Supply Chain Failures (#3) and Mishandling of Exceptional Conditions
+   (#10) are new, and SSRF was merged into Broken Access Control (#1).
+3. Click "Web Top 10".
 
-#### A03 - Software Supply Chain Failures (6 min) — *new in 2025*
-**Demo Script:**
-1. Navigate to `/web/a03`
-2. Scan for outdated/vulnerable dependencies and unpatched CVEs
-3. **Dependency confusion** — public package shadows the internal one
-4. **Unsigned artifact** — deploy a tarball with no checksum/signature
-5. **Malicious postinstall** — show what an install script would harvest
-6. **Key Points:**
-   - Broadens the old "Vulnerable & Outdated Components"
-   - The whole chain is in scope: deps, build systems, distribution
-   - Defences: SBOM, pinned/integrity-checked installs, scoped registries,
-     signed artifacts (SLSA/sigstore)
+## Web Top 10 (13 minutes)
 
-#### A04 - Cryptographic Failures (6 min)
-**Demo Script:**
-1. Navigate to `/web/a04`
-2. Show weak encryption demo
-   - DES algorithm exposure
-   - Key exposure in response
-3. Demonstrate plain text passwords
-4. **Key Points:**
-   - Data in transit and at rest
-   - Encryption vs encoding
-   - Key management importance
+Each page has a "How to Fix" section below the demos. Do not scroll to it during
+the talk. Say the fix in one sentence instead.
 
-#### A05 - Injection (6 min)
-**Demo Script:**
-1. Navigate to `/web/a05`
-2. SQL injection demonstration
-   - Try: `' OR 1=1--`
-   - Show data extraction
-   - Explain query structure
-3. **Key Points:**
-   - Input validation crucial
-   - Parameterized queries
-   - Multiple injection types
+### A01 Broken Access Control (`/web/a01`)
+- Click **Access User Data** (user 1). Admin record with password and API key
+  comes back with no login.
+- If time: **Change User Role** makes user 2 an admin. **Fetch URL** makes the
+  server call its own admin endpoint (SSRF, now part of A01).
+- Fix: check authorization on the server for every object, deny by default,
+  allow-list outbound URLs.
 
-#### A06 - Insecure Design (6 min)
-**Demo Script:**
-1. Navigate to `/web/a06`
-2. Show business logic flaws
-3. **Key Points:**
-   - Design vs implementation
-   - Threat modeling importance
-   - Security by design
+### A02 Security Misconfiguration (`/web/a02`)
+- Click **Attempt Login** with admin/admin. Access granted.
+- If time: **Fetch Debug Information** shows a production debug endpoint with
+  database and cloud credentials in the environment.
+- Fix: change defaults, disable debug in production, harden with a checklist.
 
-#### A07 - Authentication Failures (6 min)
-**Demo Script:**
-1. Navigate to `/web/a07`
-2. Show weak password demo
-3. Demonstrate session issues
-4. **Key Points:**
-   - Authentication vs authorization
-   - Session management
-   - MFA importance
+### A03 Software Supply Chain Failures (`/web/a03`, new in 2025)
+- Click **Scan Dependencies**. Old versions with known CVEs.
+- If time: **Resolve Package** shows a public package shadowing the internal
+  one. **Run postinstall (simulated)** shows what an install script can steal.
+- Fix: lock files, integrity checks, scoped private registries, SBOM, signed
+  artifacts.
 
-#### A08 - Software or Data Integrity Failures (6 min)
-**Demo Script:**
-1. Navigate to `/web/a08`
-2. Show unsigned upload / insecure deserialization demo
-3. **Key Points:**
-   - Integrity of code and data
-   - Code signing importance
-   - CI/CD security
+### A04 Cryptographic Failures (`/web/a04`)
+- Click **Hash with MD5**. Same input, same hash, rainbow tables work.
+- If time: **Encode with Base64** shows Base64 decoded back in one step.
+- Fix: bcrypt/argon2 for passwords, AES-GCM with managed keys for data.
 
-#### A09 - Security Logging and Alerting Failures (6 min)
-**Demo Script:**
-1. Navigate to `/web/a09`
-2. Show missing logging
-3. Demonstrate exposed logs
-4. **Key Points:**
-   - Incident response
-   - Alerting importance (renamed from "Monitoring" in 2025)
-   - Log security
+### A05 Injection (`/web/a05`)
+- Click **Search Posts** with `' OR 1=1--`. Private posts come back.
+- If time: **Ping Host** with `8.8.8.8; ls` runs a second command on the server.
+- Fix: parameterized queries, never build shell commands from input.
 
-#### A10 - Mishandling of Exceptional Conditions (6 min) — *new in 2025*
-**Demo Script:**
-1. Navigate to `/web/a10`
-2. Trigger the divide-by-zero error — show the leaked stack trace, source
-   path and runtime version returned to the client
-3. Run the vulnerable lookup — show the leaked SQL exposing `password_hash`
-   and `api_key`; then click the **secure** button to show the opaque,
-   reference-id response for the same failure
-4. **Key Points:**
-   - Errors must be logged server-side, never returned to the client
-   - Fail closed, not open (an exception in a check must deny)
-   - Verbose errors hand attackers a free map of the internals
+### A06 Insecure Design (`/web/a06`)
+- Click **Reset Password**. The reset needs no proof of identity.
+- If time: **Make Purchase** with a negative quantity gives a negative total.
+- Fix: threat model the flow, validate business rules on the server.
 
-### Conclusion (10 minutes)
-1. **Key Takeaways**
-   - Security is a process
-   - Multiple layers needed
-   - Regular assessment important
+### A07 Authentication Failures (`/web/a07`)
+- Click **Attempt Login** (user / wrong-password) three times. Attempt counter
+  rises, no lockout.
+- If time: **Login for JWT** shows a token signed with a weak secret and no expiry.
+- Fix: rate limit and lock out, strong secrets, short-lived tokens, MFA.
 
-2. **Next Steps**
-   - Security training
-   - Code review processes
-   - Security testing integration
+### A08 Software or Data Integrity Failures (`/web/a08`)
+- Click **Deserialize Data**. The client-supplied object sets `role: admin`.
+- If time: **Check for Updates** shows an update over HTTP with no checksum or
+  signature.
+- Fix: never trust serialized client data, sign updates and verify before use.
 
-3. **Resources**
-   - OWASP references
-   - Training platforms
-   - Security tools
+### A09 Security Logging and Alerting Failures (`/web/a09`)
+- Click **Perform Action**. A role change happens and nothing is logged.
+- If time: **Fetch Sensitive Logs** shows passwords and card numbers in the log.
+- Fix: log security events without secrets, alert on them.
 
-## Bonus Track: Top 10 Attack Surface Exposures (2026)
+### A10 Mishandling of Exceptional Conditions (`/web/a10`, new in 2025)
+- Click **Divide** by zero. Stack trace, file path and runtime version leak.
+- Click **Look Up (vulnerable)**, then **Look Up (secure handling)**. Same failure, the
+  secure one returns only a reference id.
+- Fix: catch at the boundary, log server-side, return an opaque error, fail
+  closed.
 
-This track shifts the lens from *application vulnerability classes* to *exposures* —
-services and panels that should never have been reachable from the public internet.
-It is based on an analysis of ~3,000 real-world attack surfaces (reported by The
-Hacker News, "The Top 10 Attack Surface Exposures in 2026").
+Then click "LLM Top 10" and follow the LLM guide.
 
-**Framing for the audience:** "The OWASP lists tell you how attackers break in. This
-list is about the doors you left open." Lead with the headline stats:
-- 60% had at least one HTTP panel exposed
-- 49% exposed a risky port or service
-- 42% had a database reachable directly from the internet
-- 30% exposed files or information that shouldn't be
+## Wrap-up (2 minutes)
 
-**Demo flow (navigate to `/asm`):** everything lives on a single page. Each of the ten
-cards has a collapsible **"Talk-through details"** section — expand it to reveal the
-simulated recon scan (what an attacker sees), the impact, and the remediation. Read the
-title + stat + port, then expand to confirm. For a full per-exposure script, see
+- Every web demo was one missing server-side check. Every LLM demo was the model
+  being trusted as if it were code.
+- Ask the audience to pick one item and check their own app against it this week.
+- Point to https://owasp.org/Top10/ and https://genai.owasp.org/.
+
+## If a demo fails
+
+- The backend prints every request. Look at the terminal.
+- Restart the backend. It reseeds the database.
+- Read the response shape out loud from this guide and move on.
+
+## Bonus track: Top 10 Attack Surface Exposures
+
+`/asm` is a single page with ten cards on services that should never be reachable
+from the internet (open databases, admin panels, RDP, SNMP). It is not part of the
+30-minute run. Use it as a five-minute extra if the room asks "how do attackers
+get in at all?". Script in
 [`ATTACK_SURFACE_PRESENTATION_GUIDE.md`](./ATTACK_SURFACE_PRESENTATION_GUIDE.md).
-
-| #    | Exposure                  | Seen on | Talking point                                  |
-|------|---------------------------|---------|------------------------------------------------|
-| AS01 | MySQL Database Exposed    | 26%     | Open 3306 + weak root password = ransomware    |
-| AS02 | Postgres Database Exposed | 16%     | `trust` auth needs no password at all          |
-| AS03 | API Documentation Exposed | 15%     | Swagger/GraphQL maps every admin endpoint      |
-| AS04 | WordPress Admin Panel     | 15%     | /wp-login brute force + plugin CVEs            |
-| AS05 | Remote Desktop (RDP)      | 11%     | Top ransomware entry point; BlueKeep           |
-| AS06 | SNMP Service              | 9%      | Default `public` string leaks the network      |
-| AS07 | phpMyAdmin Panel          | 8%      | A browser gateway straight into the DB         |
-| AS08 | UPnP Service              | 8%      | WAN UPnP rewrites NAT; SSDP amplification      |
-| AS09 | NTP Service               | 7%      | monlist amplification DDoS                      |
-| AS10 | RPC Portmapper            | 7%      | rpcinfo enumerates NFS/NIS to target           |
-
-**Key takeaway:** patching matters, but attack-surface *reduction* — turning off and
-firewalling what never needed to be public — prevents whole classes of attack before
-a single exploit is written.
-
-## Presentation Tips
-
-### Audience Engagement
-- Ask questions throughout
-- Encourage participation
-- Relate to real-world incidents
-- Use concrete examples
-
-### Technical Demonstrations
-- Show actual exploitation
-- Explain what's happening
-- Connect to business impact
-- Demonstrate fixes
-
-### Common Questions & Answers
-
-**Q: Are these real vulnerabilities?**
-A: Yes, these represent actual vulnerability patterns found in production applications.
-
-**Q: How common are these issues?**
-A: OWASP Top 10 represents the most critical and common security risks based on industry data.
-
-**Q: What's the business impact?**
-A: Data breaches, financial loss, reputation damage, regulatory fines, and legal liability.
-
-**Q: How do we prevent these?**
-A: Security training, secure coding practices, regular testing, and security-focused development processes.
-
-**Q: What tools can help?**
-A: Static analysis, dynamic testing, dependency scanners, and security frameworks.
-
-## Emergency Procedures
-
-### Technical Issues
-1. Have backup slides ready
-2. Use screenshots if demos fail
-3. Continue with explanation
-4. Address issues during break
-
-### Security Concerns
-1. Immediately disconnect network
-2. Stop all services
-3. Verify isolation
-4. Address concerns transparently
-
-## Post-Presentation
-
-### Follow-up Actions
-- Share presentation materials
-- Provide resource links
-- Schedule follow-up sessions
-- Plan implementation steps
-
-### Feedback Collection
-- Gather audience feedback
-- Note improvement areas
-- Update presentation based on input
-- Track security awareness impact
-
-## Additional Resources
-
-### Extended Demos
-- More complex attack chains
-- Real vulnerability examples
-- Secure coding alternatives
-- Testing methodology demos
-
-### Advanced Topics
-- Threat modeling
-- Security architecture
-- Incident response
-- Compliance requirements

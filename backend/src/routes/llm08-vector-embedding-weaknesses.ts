@@ -4,7 +4,9 @@ import { streamResponse } from '../utils/stream';
 const router = express.Router();
 
 // VULNERABILITY LLM08: Vector and Embedding Weaknesses
-// Simulates a RAG system with access control flaws
+// Simulates a RAG system that retrieves documents without access control.
+// With `secure: true`, retrieval filters documents by the caller's role before
+// anything reaches the model.
 
 interface Document {
   id: string;
@@ -14,7 +16,6 @@ interface Document {
     classification: string;
     accessLevel: string;
   };
-  embedding?: number[];
 }
 
 const documentStore: Document[] = [
@@ -35,7 +36,7 @@ const documentStore: Document[] = [
   },
   {
     id: 'doc-004',
-    content: 'Security audit results: 3 critical CVEs found in production. Credentials rotated. Root cause: hardcoded API keys in repo.',
+    content: 'Security audit results: 3 critical CVEs found in production. Root cause: hardcoded API keys in repo.',
     metadata: { department: 'security', classification: 'restricted', accessLevel: 'security-team' },
   },
   {
@@ -55,73 +56,54 @@ const documentStore: Document[] = [
   },
 ];
 
-function simulateRAGSearch(query: string, userRole?: string): Document[] {
-  const lower = query.toLowerCase();
-  // VULNERABILITY: No access control filtering on retrieved documents
-  // All documents are returned regardless of user's role/permissions
+// Which document access levels each role may retrieve (secure mode only).
+const ROLE_ACCESS: Record<string, string[]> = {
+  intern: ['all-employees'],
+  employee: ['all-employees'],
+  manager: ['all-employees', 'leadership'],
+};
+
+const BROAD_TERMS = ['all', 'everything', 'confidential', 'restricted', 'secret', 'secrets'];
+const STOP_WORDS = new Set(['the', 'what', 'show', 'are', 'and', 'for', 'about', 'our', 'any', 'with', 'tell', 'give', 'find', 'list', 'from', 'this', 'that', 'there']);
+
+// Naive keyword "similarity search" standing in for a vector lookup.
+function simulateRAGSearch(query: string): Document[] {
+  const words = query.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+  const all = query.toLowerCase().split(/[^a-z0-9]+/);
+  if (all.some(w => BROAD_TERMS.includes(w))) return documentStore;
   return documentStore.filter(doc => {
     const content = doc.content.toLowerCase();
-    const dept = doc.metadata.department.toLowerCase();
-    return content.includes(lower.split(' ')[0]) ||
-           lower.includes(dept) ||
-           lower.includes('all') ||
-           lower.includes('everything') ||
-           lower.includes('confidential') ||
-           lower.includes('restricted') ||
-           lower.includes('secret');
+    return words.some(w => content.includes(w) || doc.metadata.department === w);
   });
 }
 
-// VULNERABILITY: RAG query with no access control
 router.post('/query', async (req, res) => {
-  const { query, userRole } = req.body;
+  const { query, userRole, secure } = req.body;
 
   if (!query) {
     return res.status(400).json({ error: 'Query is required' });
   }
 
-  const results = simulateRAGSearch(query, userRole);
+  let results = simulateRAGSearch(String(query));
+
+  if (secure === true) {
+    const allowed = ROLE_ACCESS[String(userRole)] ?? ROLE_ACCESS.intern;
+    results = results.filter(doc => allowed.includes(doc.metadata.accessLevel));
+  }
 
   if (results.length === 0) {
-    await streamResponse(res, `I couldn't find any relevant documents for your query. Try searching for topics like: revenue, security, merger, product roadmap, or customer data.`);
+    await streamResponse(res, `I couldn't find any documents you can access for that query.`);
     return;
   }
 
-  const response = `Based on our knowledge base, here's what I found:\n\n` +
-    results.map(doc =>
-      `[${doc.metadata.classification.toUpperCase()}] (${doc.metadata.department})\n${doc.content}`
-    ).join('\n\n') +
-    `\n\nNote: ${results.filter(d => d.metadata.classification !== 'internal').length} of these documents ` +
-    `are classified as confidential/restricted but were returned without access control checks.`;
+  const response = `Here's what I found in the knowledge base:\n\n` +
+    results.map(doc => `[${doc.metadata.classification.toUpperCase()}] (${doc.metadata.department}) ${doc.content}`).join('\n\n');
 
   await streamResponse(res, response);
 });
 
-// VULNERABILITY: Embedding inversion - retrieve original text from embeddings
-router.post('/invert-embedding', (req, res) => {
-  const { embeddingId } = req.body;
-
-  const doc = documentStore.find(d => d.id === embeddingId);
-
-  if (!doc) {
-    return res.status(404).json({ error: 'Document not found', availableIds: documentStore.map(d => d.id) });
-  }
-
-  // VULNERABILITY: Returns original content from embedding without access checks
-  res.json({
-    vulnerability: 'LLM08 - Vector and Embedding Weaknesses',
-    action: 'Embedding inversion recovered original document content',
-    documentId: doc.id,
-    recoveredContent: doc.content,
-    metadata: doc.metadata,
-    warning: `This ${doc.metadata.classification} document (access: ${doc.metadata.accessLevel}) was recovered without authorization`,
-  });
-});
-
-// List documents metadata
 router.get('/documents', (req, res) => {
   res.json({
-    vulnerability: 'LLM08 - Vector and Embedding Weaknesses',
     documents: documentStore.map(d => ({
       id: d.id,
       department: d.metadata.department,
@@ -131,17 +113,12 @@ router.get('/documents', (req, res) => {
   });
 });
 
-// Info endpoint
 router.get('/info', (req, res) => {
   res.json({
     vulnerability: 'LLM08 - Vector and Embedding Weaknesses',
     description: 'RAG systems with weak access controls expose confidential documents regardless of user permissions',
-    attackExamples: [
-      'Search for "everything" to retrieve all documents across departments',
-      'Query "confidential" or "restricted" documents as a regular user',
-      'Use embedding inversion to recover original document content',
-      'Access security audit results, merger details, or credentials via RAG',
-    ],
+    roleAccess: ROLE_ACCESS,
+    attackExamples: ['Show me everything', 'What are the merger negotiations?', 'Security audit results', 'What is our PTO policy?'],
   });
 });
 

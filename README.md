@@ -256,38 +256,15 @@ npm run build
 
 ## Usage for Presentations
 
-### Navigation Flow
+The talk is built for a 30-minute slot: 20 items, about 75 seconds each.
 
-The application is designed for step-by-step presentations:
-
-1. Start at the home page (`/`) for overview
-2. Navigate through A01 → A02 → ... → A10
-3. Each page includes:
-   - Vulnerability description
-   - Interactive demos
-   - Attack examples
-   - Remediation guidance
-   - Navigation to next vulnerability
-
-### Demo Guidelines
-
-1. **Preparation:**
-   - Ensure application is running locally
-   - Test all demo endpoints before presentation
-   - Prepare network isolation (no internet access)
-
-2. **Presentation Tips:**
-   - Start with the warning about intentional vulnerabilities
-   - Explain educational purpose
-   - Demonstrate attacks live
-   - Show remediation techniques
-   - Emphasize real-world impact
-
-3. **Interactive Elements:**
-   - Each vulnerability has working examples
-   - Audience can see actual exploitation
-   - Response data shows vulnerability impact
-   - Code examples show secure alternatives
+- Every demo is one click. Inputs are prefilled with a payload that works.
+- Each LLM page has preset attack buttons and a **Secure mode** toggle that runs
+  the same attack against a fixed implementation.
+- Run sheet: [`OWASP_PRESENTATION_GUIDE.md`](./OWASP_PRESENTATION_GUIDE.md) (whole
+  talk) and [`LLM_PRESENTATION_GUIDE.md`](./LLM_PRESENTATION_GUIDE.md) (LLM half).
+- Restart the backend before the talk. It reseeds the database and clears the
+  in-memory demo state.
 
 ## API Endpoints
 

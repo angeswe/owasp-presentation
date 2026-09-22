@@ -5,12 +5,26 @@ const router = express.Router();
 // VULNERABILITY A05: Security Misconfiguration
 // This demonstrates various security misconfigurations
 
+// Simulated environment for the debug demo.
+// Never echo the real process.env here: it would put the host's real
+// secrets (tokens, paths, credentials) on screen during the demo.
+const SIMULATED_ENV = {
+  NODE_ENV: 'production',
+  DEBUG: 'true',
+  DATABASE_URL: 'postgres://app:Sup3rS3cret@db.internal:5432/prod',
+  JWT_SECRET: 'changeme',
+  AWS_ACCESS_KEY_ID: 'AKIAIOSFODNN7EXAMPLE',
+  AWS_SECRET_ACCESS_KEY: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+  SMTP_PASSWORD: 'mailpass123',
+  ADMIN_PANEL: '/admin'
+};
+
 // VULNERABILITY: Debug information exposure
 router.get('/debug', (req, res) => {
   res.json({
     vulnerability: 'A02 - Security Misconfiguration',
     description: 'Debug information exposure',
-    environment: process.env,
+    environment: SIMULATED_ENV,
     nodejs_version: process.version,
     platform: process.platform,
     memory_usage: process.memoryUsage(),

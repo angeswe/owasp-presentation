@@ -6,9 +6,8 @@ import { WebVulnProps } from "./types";
 
 const DataIntegrityFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [serializedData, setSerializedData] = useState(
-    '{"username":"guest","role":"user"}'
+    '{"username":"guest","role":"admin"}'
   );
-  const [file, setFile] = useState<File | null>(null);
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showCSharpExamples, setShowCSharpExamples] = useState(false);
@@ -34,32 +33,6 @@ const DataIntegrityFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
     try {
       const res = await axios.get(
         `${meta.apiBase}/update-info`
-      );
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
-  const handleFileUpload = async () => {
-    if (!file) {
-      setResponse({ error: "Please select a file to upload." });
-      return;
-    }
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await axios.post(
-        `${meta.apiBase}/upload`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
       );
       setResponse(res.data);
     } catch (error: any) {
@@ -104,13 +77,10 @@ const DataIntegrityFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
           </button>
         </div>
         <div className="attack-examples">
-          <h4>🚨 Try this malicious payload:</h4>
-          <code>
-            {'{"username":"attacker","role":"admin","isAdmin":true}'}
-          </code>
+          <h4>🚨 What happens:</h4>
           <p style={{ margin: '0.5rem 0 0 0', color: '#721c24' }}>
-            This payload attempts to elevate privileges by setting the 'role' to
-            'admin'.
+            A guest sets "role" to "admin" in the object. The server has no
+            signature check, so it grants admin access.
           </p>
         </div>
       </div>
@@ -126,27 +96,6 @@ const DataIntegrityFailures: React.FC<WebVulnProps> = ({ meta, next }) => {
         <div className="demo-controls">
           <button onClick={handleUpdateCheck} disabled={loading}>
             Check for Updates
-          </button>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>📂 Demo 3: Insecure File Upload</h2>
-        <p>
-          This demo showcases an insecure file upload feature. The server does
-          not validate the file type, content, or name, allowing an attacker to
-          upload malicious files (like a web shell) to the server.
-        </p>
-        <div className="demo-controls">
-          <label>
-            File to Upload:
-            <input
-              type="file"
-              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-            />
-          </label>
-          <button onClick={handleFileUpload} disabled={loading || !file}>
-            Upload File
           </button>
         </div>
       </div>

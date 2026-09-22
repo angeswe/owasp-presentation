@@ -4,139 +4,172 @@ import { streamResponse } from '../utils/stream';
 const router = express.Router();
 
 // VULNERABILITY LLM06: Excessive Agency
-// Simulates an AI agent with overprivileged tool access
+// Simulates an AI agent with overprivileged tools that acts without approval.
+// With `secure: true`, destructive tools are not available and every action is
+// returned as a proposal that requires human approval. Nothing is executed.
 
 interface ToolAction {
   tool: string;
   action: string;
-  params: Record<string, any>;
   result: string;
-  dangerous: boolean;
+  status: 'executed' | 'proposed';
+  requiresApproval: boolean;
 }
 
-const availableTools = {
-  'send-email': { name: 'Send Email', permissions: ['email:send'], risk: 'high' },
-  'read-file': { name: 'Read File', permissions: ['filesystem:read'], risk: 'medium' },
-  'write-file': { name: 'Write File', permissions: ['filesystem:write'], risk: 'high' },
-  'execute-command': { name: 'Execute Shell Command', permissions: ['system:execute'], risk: 'critical' },
-  'database-query': { name: 'Database Query', permissions: ['database:read', 'database:write'], risk: 'critical' },
-  'web-request': { name: 'HTTP Request', permissions: ['network:read', 'network:write'], risk: 'high' },
-  'delete-records': { name: 'Delete Records', permissions: ['database:delete'], risk: 'critical' },
+interface Tool {
+  name: string;
+  destructive: boolean;
+}
+
+const ALL_TOOLS: Record<string, Tool> = {
+  'database-query': { name: 'Database Query (read)', destructive: false },
+  'read-file': { name: 'Read File', destructive: false },
+  'draft-email': { name: 'Draft Email', destructive: false },
+  'send-email': { name: 'Send Email', destructive: true },
+  'write-file': { name: 'Write File', destructive: true },
+  'execute-command': { name: 'Execute Shell Command', destructive: true },
+  'delete-records': { name: 'Delete Records', destructive: true },
 };
 
-function simulateAgentAction(userRequest: string): { response: string; actions: ToolAction[] } {
-  const lower = userRequest.toLowerCase();
-  const actions: ToolAction[] = [];
+const toolsFor = (secure: boolean) =>
+  Object.entries(ALL_TOOLS)
+    .filter(([, t]) => !secure || !t.destructive)
+    .map(([id]) => id);
 
-  // VULNERABILITY: Agent interprets ambiguous request and takes excessive action
+type Plan = { response: string; actions: Omit<ToolAction, 'status' | 'requiresApproval'>[] };
+
+function vulnerablePlan(lower: string): Plan {
   if (lower.includes('clean up') || lower.includes('organize') || lower.includes('tidy')) {
-    actions.push(
-      { tool: 'database-query', action: 'SELECT * FROM users WHERE last_login < "2023-01-01"', params: { table: 'users' }, result: 'Found 142 inactive users', dangerous: false },
-      { tool: 'delete-records', action: 'DELETE FROM users WHERE last_login < "2023-01-01"', params: { count: 142 }, result: 'Deleted 142 user accounts permanently', dangerous: true },
-      { tool: 'send-email', action: 'Sent notification to admin@company.com', params: { to: 'admin@company.com', subject: 'Cleanup complete' }, result: 'Email sent', dangerous: true },
-    );
     return {
-      response: `I've cleaned up the system for you! Here's what I did:\n\n` +
-        `1. Found 142 inactive user accounts (not logged in since 2023)\n` +
-        `2. Permanently deleted all 142 accounts\n` +
-        `3. Sent a notification email to the admin\n\n` +
-        `The agent had permission to delete records and send emails without human approval. ` +
-        `An ambiguous "clean up" request led to permanent data destruction.`,
-      actions,
+      response: `Done. I cleaned up the system:\n\n` +
+        `1. Found 142 accounts with no login since 2023\n` +
+        `2. Deleted all 142 accounts permanently\n` +
+        `3. Emailed admin@company.com a summary`,
+      actions: [
+        { tool: 'database-query', action: 'SELECT id FROM users WHERE last_login < 2023-01-01', result: '142 rows' },
+        { tool: 'delete-records', action: 'DELETE FROM users WHERE last_login < 2023-01-01', result: '142 accounts deleted' },
+        { tool: 'send-email', action: 'to: admin@company.com "Cleanup complete"', result: 'sent' },
+      ],
     };
   }
 
-  // VULNERABILITY: Agent sends emails on user's behalf without confirmation
   if (lower.includes('email') || lower.includes('send') || lower.includes('notify')) {
-    actions.push(
-      { tool: 'send-email', action: 'Composed and sent email', params: { to: 'all-company@company.com', subject: 'Important Update', body: 'AI-generated message sent without review' }, result: 'Email sent to 500+ recipients', dangerous: true },
-    );
     return {
-      response: `Done! I've sent the email to the entire company mailing list (500+ recipients).\n\n` +
-        `The agent composed and sent an email without:\n` +
-        `- Showing you the draft first\n` +
-        `- Asking for confirmation\n` +
-        `- Limiting the recipient scope\n\n` +
-        `This demonstrates excessive autonomy - the agent acted without human-in-the-loop approval.`,
-      actions,
+      response: `Done! I wrote the update and sent it to all-company@company.com (512 recipients).`,
+      actions: [
+        { tool: 'send-email', action: 'to: all-company@company.com "Important Update"', result: 'sent to 512 recipients' },
+      ],
     };
   }
 
-  // VULNERABILITY: Agent executes system commands
   if (lower.includes('fix') || lower.includes('update') || lower.includes('restart') || lower.includes('deploy')) {
-    actions.push(
-      { tool: 'execute-command', action: 'sudo systemctl restart production-api', params: {}, result: 'Production API restarted', dangerous: true },
-      { tool: 'execute-command', action: 'npm install --force', params: {}, result: 'Dependencies force-updated, 3 breaking changes', dangerous: true },
-      { tool: 'write-file', action: 'Modified /etc/nginx/nginx.conf', params: { file: '/etc/nginx/nginx.conf' }, result: 'Configuration updated', dangerous: true },
-      { tool: 'execute-command', action: 'sudo systemctl reload nginx', params: {}, result: 'Nginx reloaded with new config', dangerous: true },
-    );
     return {
-      response: `I've fixed the issue! Here's what I did:\n\n` +
-        `1. Restarted the production API\n` +
-        `2. Force-updated all npm dependencies (3 breaking changes introduced)\n` +
-        `3. Modified the Nginx configuration\n` +
-        `4. Reloaded Nginx\n\n` +
-        `The agent had system execution permissions and took destructive actions on production ` +
-        `infrastructure without approval. This could cause downtime or data loss.`,
-      actions,
+      response: `Fixed! Here's what I did:\n\n` +
+        `1. Restarted production-api\n` +
+        `2. Ran npm install --force (3 major version upgrades)\n` +
+        `3. Rewrote /etc/nginx/nginx.conf and reloaded nginx`,
+      actions: [
+        { tool: 'execute-command', action: 'systemctl restart production-api', result: 'restarted' },
+        { tool: 'execute-command', action: 'npm install --force', result: '3 major upgrades' },
+        { tool: 'write-file', action: 'overwrite /etc/nginx/nginx.conf', result: 'written' },
+        { tool: 'execute-command', action: 'systemctl reload nginx', result: 'reloaded' },
+      ],
     };
   }
 
   return {
-    response: `I'm an AI agent with access to the following tools:\n\n` +
-      Object.entries(availableTools).map(([id, t]) => `- **${t.name}** (Risk: ${t.risk})`).join('\n') +
-      `\n\nTry asking me to:\n` +
-      `- "Clean up the system"\n` +
-      `- "Send an email update to the team"\n` +
-      `- "Fix the production server"\n\n` +
-      `I'll demonstrate how excessive permissions and autonomy can lead to dangerous actions.`,
+    response: `I'm your ops agent. I can query databases, send email, edit files and run shell commands. What should I do?`,
     actions: [],
   };
 }
 
-// Chat endpoint - streams response
+function securePlan(lower: string): Plan {
+  if (lower.includes('clean up') || lower.includes('organize') || lower.includes('tidy')) {
+    return {
+      response: `I found 142 accounts with no login since 2023. I can't delete accounts. ` +
+        `I've drafted a proposal to deactivate them. Nothing has changed yet; please review and approve.`,
+      actions: [
+        { tool: 'database-query', action: 'SELECT id FROM users WHERE last_login < 2023-01-01', result: '142 rows (read-only)' },
+        { tool: 'change-request', action: 'Deactivate 142 inactive accounts (reversible)', result: 'awaiting approval' },
+      ],
+    };
+  }
+
+  if (lower.includes('email') || lower.includes('send') || lower.includes('notify')) {
+    return {
+      response: `I drafted the update for your team (8 recipients). It has not been sent. Please review the draft and approve it.`,
+      actions: [
+        { tool: 'draft-email', action: 'to: platform-team@company.com "Weekly update"', result: 'draft saved' },
+      ],
+    };
+  }
+
+  if (lower.includes('fix') || lower.includes('update') || lower.includes('restart') || lower.includes('deploy')) {
+    return {
+      response: `I read the logs: production-api is out of memory. I can't run commands on production. ` +
+        `I've proposed a restart for the on-call engineer to approve.`,
+      actions: [
+        { tool: 'read-file', action: 'tail /var/log/production-api.log', result: 'OutOfMemoryError x14' },
+        { tool: 'change-request', action: 'Restart production-api', result: 'awaiting approval' },
+      ],
+    };
+  }
+
+  return {
+    response: `I'm your ops agent. I can read data and draft changes. A human approves anything that changes a system.`,
+    actions: [],
+  };
+}
+
+function simulateAgent(message: string, secure: boolean): { response: string; actions: ToolAction[] } {
+  const lower = message.toLowerCase();
+  const plan = secure ? securePlan(lower) : vulnerablePlan(lower);
+  return {
+    response: plan.response,
+    actions: plan.actions.map((a): ToolAction => ({
+      ...a,
+      status: secure ? 'proposed' : 'executed',
+      requiresApproval: secure,
+    })),
+  };
+}
+
 router.post('/chat', async (req, res) => {
-  const { message } = req.body;
+  const { message, secure } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  const { response } = simulateAgentAction(message);
+  const { response } = simulateAgent(String(message), secure === true);
   await streamResponse(res, response);
 });
 
-// Action log endpoint - shows what the agent did
+// Action log: what the agent did (vulnerable) or proposes (secure)
 router.post('/execute', (req, res) => {
-  const { message } = req.body;
+  const { message, secure } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  const { response, actions } = simulateAgentAction(message);
+  const isSecure = secure === true;
+  const { response, actions } = simulateAgent(String(message), isSecure);
 
   res.json({
-    vulnerability: 'LLM06 - Excessive Agency',
-    description: 'AI agent has overprivileged tools and acts without human approval',
-    userRequest: message,
+    mode: isSecure ? 'secure' : 'vulnerable',
     agentResponse: response,
-    actionsPerformed: actions,
-    availableTools: availableTools,
+    availableTools: toolsFor(isSecure),
+    actions,
   });
 });
 
-// Info endpoint
 router.get('/info', (req, res) => {
   res.json({
     vulnerability: 'LLM06 - Excessive Agency',
     description: 'LLM agents with excessive functionality, permissions, or autonomy can take harmful actions',
-    tools: availableTools,
-    attackExamples: [
-      'Clean up the system (triggers mass deletion without confirmation)',
-      'Send an email update (sends to all-company without review)',
-      'Fix the production server (restarts services, modifies configs)',
-    ],
+    tools: ALL_TOOLS,
+    attackExamples: ['Clean up the system', 'Send an email update to the team', 'Fix the production server'],
   });
 });
 

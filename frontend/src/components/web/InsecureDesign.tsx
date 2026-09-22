@@ -5,8 +5,10 @@ import "../VulnerabilityPage.css";
 import { WebVulnProps } from "./types";
 
 const InsecureDesign: React.FC<WebVulnProps> = ({ meta, next }) => {
-  const [resetUsername, setResetUsername] = useState("admin");
-  const [newPassword, setNewPassword] = useState("new_password_123");
+  // Target the regular "user" account, not "admin": the A07 JWT demo logs in
+  // as admin/admin123, and resetting admin here would break that demo.
+  const [resetUsername, setResetUsername] = useState("user");
+  const [newPassword, setNewPassword] = useState("hacked123");
   const [itemId, setItemId] = useState("item-123");
   const [quantity, setQuantity] = useState(5);
   const [purchaseUserId, setPurchaseUserId] = useState(2);

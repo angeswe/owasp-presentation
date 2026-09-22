@@ -52,11 +52,26 @@ router.post('/deserialize', (req, res) => {
     // In a real app, this could be pickle, JSON.parse with functions, etc.
     const data = JSON.parse(serialized_data);
 
+    // VULNERABLE: The client-supplied object is trusted as the session.
+    // No signature or HMAC check, so the client decides its own role.
+    const isAdmin = data?.role === 'admin' || data?.isAdmin === true;
+
     res.json({
       vulnerability: 'A08 - Software or Data Integrity Failures',
       description: 'Insecure deserialization',
       deserialized: data,
-      explanation: 'Deserializing untrusted data can lead to code execution'
+      signature_checked: false,
+      session: {
+        user: data?.username ?? 'unknown',
+        role: data?.role ?? 'user',
+        access: isAdmin
+          ? 'ADMIN ACCESS GRANTED: user management, billing and config unlocked'
+          : 'standard user access'
+      },
+      explanation:
+        'The server trusts a client-supplied object with no integrity check, so ' +
+        'changing "role" to "admin" grants admin rights. With unsafe deserializers ' +
+        '(pickle, BinaryFormatter, node-serialize) the same flaw leads to code execution.'
     });
   } catch (error) {
     const err = error as Error;

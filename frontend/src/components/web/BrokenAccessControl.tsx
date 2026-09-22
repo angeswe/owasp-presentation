@@ -19,12 +19,12 @@ const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
-  const [targetUserId, setTargetUserId] = useState("");
+  const [targetUserId, setTargetUserId] = useState("2");
   const [newRole, setNewRole] = useState("admin");
   // SSRF was folded into A01 in OWASP 2025 — demo state for the SSRF section.
-  const [ssrfUrl, setSsrfUrl] = useState("http://httpbin.org/json");
-  const [scanHost, setScanHost] = useState("localhost");
-  const [scanPort, setScanPort] = useState("22");
+  const [ssrfUrl, setSsrfUrl] = useState(
+    "http://localhost:3001/api/broken-access-control/admin/users"
+  );
   const [showCSharpExamples, setShowCSharpExamples] = useState(false);
 
   const testDirectObjectReference = async () => {
@@ -71,17 +71,6 @@ const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
     setLoading(false);
   };
 
-  const testAdminAccess = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${meta.apiBase}/admin/users`);
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
   // SSRF (folded into A01 in 2025) — endpoints are nested under /ssrf.
   const testSSRF = async () => {
     setLoading(true);
@@ -89,19 +78,6 @@ const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
       const res = await axios.post(`${meta.apiBase}/ssrf/fetch-url`, {
         url: ssrfUrl,
       });
-      setResponse(res.data);
-    } catch (error: any) {
-      setResponse({ error: error.response?.data || error.message });
-    }
-    setLoading(false);
-  };
-
-  const handlePortScan = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(
-        `${meta.apiBase}/ssrf/check-service?host=${scanHost}&port=${scanPort}`
-      );
       setResponse(res.data);
     } catch (error: any) {
       setResponse({ error: error.response?.data || error.message });
@@ -121,7 +97,7 @@ const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
           Access control enforces policies so users can't act outside of their
           intended permissions. When broken, users can access unauthorized
           functionality or data. In OWASP 2025, Server-Side Request Forgery
-          (SSRF) was merged into this category — see Demos 4 & 5.
+          (SSRF) was merged into this category — see Demo 3.
         </p>
       </div>
 
@@ -150,43 +126,16 @@ const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
         </div>
 
         <div className="demo-tips">
-          <h4>💡 Try these attacks:</h4>
+          <h4>💡 Try:</h4>
           <ul>
-            <li>User ID 1 (admin) - should be restricted</li>
-            <li>User ID 2 (regular user)</li>
-            <li>User ID 999 (non-existent user)</li>
+            <li>User ID 1 is the admin: password and API key come back</li>
+            <li>Change it to 2 to read another account</li>
           </ul>
         </div>
       </div>
 
       <div className="demo-section">
-        <h2>👑 Demo 2: Admin Panel Access</h2>
-                <p>
-          This demo shows how an attacker can access a privileged endpoint that
-          is not protected by any authentication or authorization checks.
-          Clicking the button will attempt to fetch all users from an admin-only
-          endpoint.
-        </p>
-
-        <div className="demo-controls">
-          <button onClick={testAdminAccess} disabled={loading}>
-            Access Admin Panel
-          </button>
-        </div>
-
-        <div className="vulnerability-explanation">
-          <h4>🚨 Why this is dangerous:</h4>
-          <ul>
-            <li>Sensitive user data exposed</li>
-            <li>Admin functions accessible to anyone</li>
-            <li>No authorization checks</li>
-            <li>Privilege escalation possible</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>🚀 Demo 3: Privilege Escalation</h2>
+        <h2>🚀 Demo 2: Privilege Escalation</h2>
         <p>
           An attacker can exploit a vulnerable endpoint to change a user's role
           to 'admin'. This would allow them to gain full control over the
@@ -240,7 +189,7 @@ const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
       </div>
 
       <div className="demo-section">
-        <h2>🌐 Demo 4: SSRF — Unvalidated URL Fetch <span style={{ fontSize: "0.7em", opacity: 0.7 }}>(merged into A01 in 2025)</span></h2>
+        <h2>🌐 Demo 3: SSRF — Unvalidated URL Fetch <span style={{ fontSize: "0.7em", opacity: 0.7 }}>(merged into A01 in 2025)</span></h2>
         <p>
           The server fetches content from a user-supplied URL without validating
           it, so an attacker can force requests to internal services, the cloud
@@ -264,40 +213,9 @@ const BrokenAccessControl: React.FC<WebVulnProps> = ({ meta, next }) => {
         </div>
 
         <div className="attack-examples">
-          <h4>🚨 Try these SSRF attacks:</h4>
-          <code>http://localhost:3001/api/broken-access-control/admin/users</code>
+          <h4>🚨 Other targets:</h4>
           <code>http://169.254.169.254/latest/meta-data/</code>
           <code>file:///etc/passwd</code>
-        </div>
-      </div>
-
-      <div className="demo-section">
-        <h2>📡 Demo 5: SSRF — Internal Port Scanning</h2>
-        <p>
-          SSRF also turns the server into a proxy for reconnaissance: an attacker
-          can scan the internal network from the server's vantage point to
-          discover services that are not exposed publicly.
-        </p>
-        <div className="demo-controls">
-          <label>
-            Host to Scan:
-            <input
-              type="text"
-              value={scanHost}
-              onChange={(e) => setScanHost(e.target.value)}
-            />
-          </label>
-          <label>
-            Port to Scan:
-            <input
-              type="text"
-              value={scanPort}
-              onChange={(e) => setScanPort(e.target.value)}
-            />
-          </label>
-          <button onClick={handlePortScan} disabled={loading}>
-            Scan Port
-          </button>
         </div>
       </div>
 
