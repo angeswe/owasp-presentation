@@ -89,6 +89,21 @@
   color: white;
 }
 
+.landing-card--agents {
+  background: linear-gradient(135deg, #042f2e, #134e4a, #0f766e);
+  color: white;
+  box-shadow: 0 4px 16px rgba(15, 118, 110, 0.3);
+}
+
+.landing-card--agents .landing-card__year {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.landing-card--agents .landing-card__cta {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
 .landing-card--llm::before {
   content: '';
   position: absolute;

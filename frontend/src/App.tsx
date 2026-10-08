@@ -19,11 +19,16 @@ import { llmTop10 } from './components/llm/llmTop10';
 import ASMHomePage from './components/asm/ASMHomePage';
 import ASMNavigation from './components/asm/ASMNavigation';
 
+// Secure agent coding tips — single page, shown after the two Top 10 tracks
+import AgentTipsPage from './components/agents/AgentTipsPage';
+import AgentNavigation from './components/agents/AgentNavigation';
+
 function AppContent() {
   const location = useLocation();
   const isLLMRoute = location.pathname.startsWith('/llm');
   const isWebRoute = location.pathname.startsWith('/web');
   const isASMRoute = location.pathname.startsWith('/asm');
+  const isAgentRoute = location.pathname.startsWith('/agents');
 
   // Scroll to the top whenever the route changes so each slide starts at the top.
   // useLayoutEffect runs before the browser paints, so the new page never flashes
@@ -37,7 +42,7 @@ function AppContent() {
       <header
         className={`App-header ${isLLMRoute ? 'App-header-llm' : ''} ${
           isASMRoute ? 'App-header-asm' : ''
-        }`}
+        } ${isAgentRoute ? 'App-header-agents' : ''}`}
       >
         <h1>
           {isLLMRoute
@@ -46,6 +51,8 @@ function AppContent() {
             ? '⚠️ OWASP Web Top 10 Demo ⚠️'
             : isASMRoute
             ? '🛰️ Top 10 Attack Surface Exposures 🛰️'
+            : isAgentRoute
+            ? '🧰 Secure Agent Coding: Tips & Tricks 🧰'
             : '⚠️ OWASP Top 10 Security Demo ⚠️'}
         </h1>
         <p className="warning">FOR EDUCATIONAL PURPOSES ONLY</p>
@@ -54,6 +61,7 @@ function AppContent() {
       {isWebRoute && <Navigation />}
       {isLLMRoute && <LLMNavigation />}
       {isASMRoute && <ASMNavigation />}
+      {isAgentRoute && <AgentNavigation />}
 
       <main className="App-main">
         <Routes>
@@ -88,6 +96,9 @@ function AppContent() {
 
           {/* Attack Surface Exposures Top 10 — single summary page */}
           <Route path="/asm" element={<ASMHomePage />} />
+
+          {/* Secure agent coding tips — single page */}
+          <Route path="/agents" element={<AgentTipsPage />} />
         </Routes>
       </main>
     </div>
