@@ -28,6 +28,7 @@ This is an interactive demonstration of the **OWASP Top 10 (2025)** web applicat
 - **Backend**: Node.js Express API with intentionally vulnerable endpoints
 - **Database**: SQLite with vulnerable schema and sample data
 - **LLM Simulation**: Simulated LLM responses streamed token-by-token via SSE
+- **Agent coding tips**: One static page (`/agents`) with four tips for secure coding with AI agents
 
 ## Architecture
 
@@ -256,7 +257,8 @@ npm run build
 
 ## Usage for Presentations
 
-The talk is built for a 30-minute slot: 20 items, about 75 seconds each.
+The talk is built for a 30-minute slot: 20 Top 10 items at about 75 seconds each,
+then a 2-minute closing block of four tips for secure coding with agents (`/agents`).
 
 - Every demo is one click. Inputs are prefilled with a payload that works.
 - Each LLM page has preset attack buttons and a **Secure mode** toggle that runs

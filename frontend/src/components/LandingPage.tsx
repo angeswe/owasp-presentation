@@ -45,6 +45,16 @@ const LandingPage: React.FC = () => {
           </p>
           <span className="landing-card__cta">Explore Attack Surface Top 10 &rarr;</span>
         </Link>
+
+        <Link to="/agents" className="landing-card landing-card--agents">
+          <span className="landing-card__year">4 tips</span>
+          <h2>Secure Agent Coding</h2>
+          <p>
+            Most code is now written by agents. Four habits that keep the code,
+            and the agent that writes it, safe.
+          </p>
+          <span className="landing-card__cta">Explore Tips &amp; Tricks &rarr;</span>
+        </Link>
       </div>
     </div>
   );
